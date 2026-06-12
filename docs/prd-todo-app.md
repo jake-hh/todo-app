@@ -62,7 +62,9 @@ A TUI application written in C++ using ftxui that manages a list of tasks stored
 - `EditForm` — form component for creating and editing tasks.
 - `DepSelector` — multi-select list for adding/removing dependencies; forbidden tasks (those that would cause a cycle) are rendered as dimmed and non-interactive.
 
-**Entry point** (`src/app/main.cpp`) — parses optional CLI arg for file path, initialises `TaskStore`, loads file, launches ftxui event loop.
+**Entry point** (`src/app/main.cpp`) — parses optional CLI arg for file path, defaults to `tasks.bin` next to the executable, and passes the resolved path to `App`.
+
+`App` owns the file path, calls `FileIO::load` in its constructor (missing file → empty store + UI notice; corrupt file → stderr + exit), and calls `FileIO::save` after every mutation.
 
 ### Key Architecture Decisions
 
