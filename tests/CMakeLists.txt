@@ -19,6 +19,16 @@ add_executable(taskStoreTests taskStoreTests.cpp ../src/app/data/TaskStore.cpp)
 target_include_directories(taskStoreTests PRIVATE ../src/smartArray)
 target_link_libraries(taskStoreTests GTest::gtest_main SmartArray)
 
+add_executable(fileIOTests
+    fileIOTests.cpp
+    ../src/app/data/FileIO.cpp
+    ../src/app/data/TaskStore.cpp
+    ../src/app/data/Task.cpp
+)
+target_include_directories(fileIOTests PRIVATE ../src/smartArray ../src/app/data)
+target_link_libraries(fileIOTests GTest::gtest_main SmartArray)
+
 include(GoogleTest)
 gtest_discover_tests(smartArrayTests)
 gtest_discover_tests(taskStoreTests)
+gtest_discover_tests(fileIOTests)

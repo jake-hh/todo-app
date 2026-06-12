@@ -34,6 +34,12 @@ public:
                     int64_t dueDate);
 
     /**
+     * @brief Inserts a task at its existing id. Used by FileIO::load.
+     * (!) You have to call recalcNextId after inserting tasks (!)
+     */
+    void insert(Task t);
+
+    /**
      * @brief Returns a reference to the task with the given ID.
      * @throws std::out_of_range if the ID does not exist.
      */

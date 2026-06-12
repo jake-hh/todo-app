@@ -19,6 +19,11 @@ unsigned TaskStore::create(const std::string& title,
 }
 
 
+void TaskStore::insert(Task t) {
+    _tasks[t.id] = std::move(t);
+}
+
+
 Task& TaskStore::get(unsigned id) {
     auto it = _tasks.find(id);
     if (it == _tasks.end())
