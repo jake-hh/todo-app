@@ -16,8 +16,13 @@ private:
     std::vector<unsigned> _ids;        // cached task IDs in list order; index matches _labels
     std::vector<std::string> _labels; // cached strings shown in the list pane
     int _selected = 0;                 // index of the currently highlighted task
+    bool _delDialogOpen = false;       // whether the delete confirmation dialog is visible
+    int  _delFocus = 0;                // focused button index within the delete dialog
 
     void buildTreeFrom(unsigned id, int depth);
+
+    /** @brief Clears and rebuilds _ids/_labels from the current store state; clamps _selected. */
+    void rebuildTree();
 
 public:
     App();

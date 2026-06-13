@@ -56,6 +56,14 @@ App::App() {
         _store.get(id6).deps.pushBack(id7);
     }
 
+    rebuildTree();
+}
+
+
+void App::rebuildTree() {
+    _ids.clear();
+    _labels.clear();
+
     // Collect IDs of all tasks that are blockers (appear in any dep list).
     std::set<unsigned> allDeps;
     for (auto& [id, task] : _store.tasks())
@@ -66,6 +74,12 @@ App::App() {
     for (auto& [id, task] : _store.tasks())
         if (!allDeps.count(id))
             buildTreeFrom(id, 0);
+
+    // Clamp selection to valid range.
+    if (_ids.empty())
+        _selected = 0;
+    else if (_selected >= static_cast<int>(_ids.size()))
+        _selected = static_cast<int>(_ids.size()) - 1;
 }
 
 
@@ -100,8 +114,50 @@ void App::run() {
     // and handles focus cycling.
     auto layout = Container::Horizontal({list_pane, detail_pane});
 
+    // Helpers shared by the renderer and event handler to avoid duplicating
+    // the clamped-selection and store-lookup logic.
+    auto selIdx  = [&]() { return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1)); };
+    auto selTask = [&]() -> const ::Task& { return _store.get(_ids[selIdx()]); };
+
+    // Builds the delete dialog element for the current selection.
+    auto renderDialog = [&]() -> Element {
+        const ::Task& t = selTask();
+        bool hasDeps = !t.deps.isEmpty();
+
+        auto btn = [](const std::string& label, bool focused) -> Element {
+            auto e = text("  " + label + "  ") | border;
+            return focused ? e | inverted : e;
+        };
+
+        Elements buttons;
+        if (hasDeps) {
+            buttons.push_back(btn("Delete All",      _delFocus == 0));
+            buttons.push_back(text("  "));
+            buttons.push_back(btn("Delete Selected", _delFocus == 1));
+            buttons.push_back(text("  "));
+            buttons.push_back(btn("Cancel",          _delFocus == 2));
+        } else {
+            buttons.push_back(btn("Delete", _delFocus == 0));
+            buttons.push_back(text("  "));
+            buttons.push_back(btn("Cancel", _delFocus == 1));
+        }
+
+        Elements lines;
+        lines.push_back(text(" \"" + t.title + "\""));
+        if (hasDeps)
+            lines.push_back(text(" This task has " +
+                                 std::to_string(t.deps.size()) +
+                                 " direct " +
+                                 (t.deps.size() == 1 ? "dependency." : "dependencies.")));
+        lines.push_back(separator());
+        lines.push_back(hbox(std::move(buttons)) | center);
+
+        return vbox(std::move(lines)) | border | clear_under | center;
+    };
+
     // Renderer wraps the layout to add the border/title chrome around each pane.
     // Terminal::Size() is queried each frame so the split tracks terminal resizes.
+    // When the delete dialog is open it is layered on top via dbox.
     // Explicit size() avoids ftxui's flex distribution, which allocates space as
     // min_size + extra/2 per pane — causing widths to jump when detail content
     // changes natural width on each selection change.
@@ -109,7 +165,7 @@ void App::run() {
         int w = Terminal::Size().dimx;
         int left_w  = w / 2;
         int right_w = w - left_w;
-        return hbox({
+        auto main = hbox({
             vbox({
                 text(" Tasks") | bold,
                 separator(),
@@ -121,13 +177,63 @@ void App::run() {
                 detail_pane->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w),
         });
+        if (!_delDialogOpen || _ids.empty()) return main;
+        return dbox({main, renderDialog()});
     });
 
-    // CatchEvent sits above the layout so 'q' is handled globally regardless
-    // of which pane has focus.
+    // Single CatchEvent handles all keyboard input. When the delete dialog is
+    // open it intercepts every event first and consumes them all (returns true),
+    // preventing the underlying panes from acting on stray keypresses.
     auto root = CatchEvent(renderer, [&](Event e) {
+        if (_delDialogOpen && !_ids.empty()) {
+            const ::Task& t = selTask();
+            bool hasDeps = !t.deps.isEmpty();
+            int numBtns = hasDeps ? 3 : 2;
+
+            if (e == Event::ArrowLeft || e == Event::Character('h')) {
+                if (_delFocus > 0) _delFocus--;
+                return true;
+            }
+            if (e == Event::ArrowRight || e == Event::Character('l')) {
+                if (_delFocus < numBtns - 1) _delFocus++;
+                return true;
+            }
+            if (e == Event::Tab) {
+                _delFocus = (_delFocus + 1) % numBtns;
+                return true;
+            }
+            if (e == Event::TabReverse) {
+                _delFocus = (_delFocus - 1 + numBtns) % numBtns;
+                return true;
+            }
+            if (e == Event::Return) {
+                unsigned tid = _ids[selIdx()];
+                if (!hasDeps) {
+                    if (_delFocus == 0) _store.removeSplice(tid);
+                    // _delFocus == 1: Cancel — no action
+                } else {
+                    if (_delFocus == 0)      _store.removeCascade(tid);
+                    else if (_delFocus == 1) _store.removeSplice(tid);
+                    // _delFocus == 2: Cancel — no action
+                }
+                _delDialogOpen = false;
+                rebuildTree();
+                return true;
+            }
+            if (e == Event::Escape || e == Event::Character('q')) {
+                _delDialogOpen = false;
+                return true;
+            }
+            return true; // consume all other events while dialog is open
+        }
+
         if (e == Event::Character('q')) {
             screen.ExitLoopClosure()();
+            return true;
+        }
+        if (e == Event::Character('d') && !_ids.empty()) {
+            _delFocus = selTask().deps.isEmpty() ? 0 : 1;
+            _delDialogOpen = true;
             return true;
         }
         return false;
