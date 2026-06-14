@@ -1,24 +1,28 @@
 #include "DetailPane.h"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 
 #include "FieldComponents.h"
+#include "../data/Task.h"
 
 
 DetailPane::DetailPane(TaskStore& store,
                        const std::vector<unsigned>& ids,
-                       int& selected)
+                       int& selected,
+                       std::function<void()> onMutation)
     : _store(store), _ids(ids), _selected(selected)
+    , _editingFlag(std::make_shared<bool>(false))
 {
     using namespace ftxui;
 
+    auto ef = _editingFlag;
+
     // Safe task lookup — returns nullptr when the list is empty.
-    // Captures the three App-owned references directly so no DetailPane
-    // address is involved; the component remains valid regardless of pane lifetime.
     auto getTask = [&store = _store, &ids = _ids, &sel = _selected]() -> const Task* {
         if (ids.empty()) return nullptr;
         int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
@@ -56,11 +60,67 @@ DetailPane::DetailPane(TaskStore& store,
         });
     });
 
-    auto title_f    = Make<TextField>(" Title: ",       [getTask]() -> std::string { const Task* t = getTask(); return t ? t->title        : ""; });
-    auto status_f   = Make<CycleField>(" Status: ",     [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; });
-    auto priority_f = Make<CycleField>(" Priority: ",   [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; });
-    auto duedate_f  = Make<TextField>(" Due: ",         [getTask]() -> std::string { const Task* t = getTask(); return t ? t->dueDateStr() : ""; });
-    auto desc_f     = Make<TextField>(" Description: ", [getTask]() -> std::string { const Task* t = getTask(); return t ? t->description  : ""; });
+    // Setter helpers — capture refs and onMutation by value.
+    auto setTitle = [&store = _store, &ids = _ids, &sel = _selected, onMutation]
+                    (const std::string& val) -> bool {
+        if (val.empty()) return false;
+        if (ids.empty()) return false;
+        int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
+        Task updated = store.get(ids[i]);
+        updated.title = val;
+        store.update(updated.id, updated);
+        onMutation();
+        return true;
+    };
+
+    auto setDesc = [&store = _store, &ids = _ids, &sel = _selected, onMutation]
+                   (const std::string& val) -> bool {
+        if (ids.empty()) return false;
+        int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
+        Task updated = store.get(ids[i]);
+        updated.description = val;
+        store.update(updated.id, updated);
+        onMutation();
+        return true;
+    };
+
+    auto setDueDate = [&store = _store, &ids = _ids, &sel = _selected, onMutation]
+                      (const std::string& val) -> bool {
+        auto parsed = parseDueDate(val);
+        if (!parsed) return false;
+        if (ids.empty()) return false;
+        int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
+        Task updated = store.get(ids[i]);
+        updated.dueDate = *parsed;
+        store.update(updated.id, updated);
+        onMutation();
+        return true;
+    };
+
+    // For due date: edit buffer starts as "" (not "none") when there is no due date.
+    auto getDueDateForEdit = [getTask]() -> std::string {
+        const Task* t = getTask();
+        if (!t || t->dueDate == -1) return "";
+        return t->dueDateStr();
+    };
+
+    auto title_f    = Make<TextField>(" Title: ",
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->title        : ""; },
+                          setTitle, "Title cannot be empty", ef);
+
+    auto status_f   = Make<CycleField>(" Status: ",
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; });
+
+    auto priority_f = Make<CycleField>(" Priority: ",
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; });
+
+    auto duedate_f  = Make<TextField>(" Due: ",
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->dueDateStr() : ""; },
+                          setDueDate, "Invalid date", ef, getDueDateForEdit);
+
+    auto desc_f     = Make<TextField>(" Description: ",
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->description  : ""; },
+                          setDesc, "", ef);
 
     _titleField = title_f;
 
@@ -74,8 +134,10 @@ DetailPane::DetailPane(TaskStore& store,
         footer,
     });
 
-    // Remap j/k to arrow keys so vim-style navigation works within the pane.
-    _component = CatchEvent(container, [container](Event e) {
+    // Remap j/k to arrow keys only when not in edit mode.
+    // In edit mode, j/k must pass through as characters to the active TextField.
+    _component = CatchEvent(container, [container, ef](Event e) {
+        if (*ef) return false;
         if (e == Event::Character('j')) return container->OnEvent(Event::ArrowDown);
         if (e == Event::Character('k')) return container->OnEvent(Event::ArrowUp);
         return false;

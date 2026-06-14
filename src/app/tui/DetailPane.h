@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include <memory>
 #include <vector>
 #include <ftxui/component/component.hpp>
 #include "../data/TaskStore.h"
@@ -17,11 +19,17 @@ private:
     TaskStore& _store;
     const std::vector<unsigned>& _ids;
     int& _selected;
+    std::shared_ptr<bool> _editingFlag;
     ftxui::Component _component;
     ftxui::Component _titleField; // kept for takeFocus()
 
 public:
-    DetailPane(TaskStore& store, const std::vector<unsigned>& ids, int& selected);
+    /**
+     * @param onMutation Called after any successful field save so the caller
+     *                   can rebuild derived state (e.g. list pane labels).
+     */
+    DetailPane(TaskStore& store, const std::vector<unsigned>& ids, int& selected,
+               std::function<void()> onMutation);
 
     /** @brief Returns the ftxui component to place in the layout. */
     ftxui::Component component() const { return _component; }
@@ -29,6 +37,6 @@ public:
     /** @brief Moves focus to the title field. */
     void takeFocus() { _titleField->TakeFocus(); }
 
-    /** @brief Returns true while a text field is being edited (Phase 3+). */
-    bool isEditing() const { return false; }
+    /** @brief Returns true while a text field is being edited. */
+    bool isEditing() const { return *_editingFlag; }
 };

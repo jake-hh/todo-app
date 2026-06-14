@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/event.hpp>
@@ -26,18 +27,47 @@ public:
 
 
 /**
- * @brief Focusable text field. Highlights when focused.
+ * @brief Focusable text field with hover and edit states.
  *
- * Phase 3 will add edit mode: Enter activates an Input, Esc discards,
- * Enter again saves to the store.
+ * Hover: highlights when focused. Enter activates edit mode.
+ * Edit: shows manual cursor with gray background. Enter saves via trySetValue,
+ * Esc discards. All keys are consumed in edit mode to block global shortcuts.
  */
 class TextField : public FieldBase {
 private:
     std::string _label;
     std::function<std::string()> _getValue;
+    std::function<bool(const std::string&)> _trySetValue;
+    std::string _errorMsg;
+    std::shared_ptr<bool> _editingFlag;
+    std::function<std::string()> _getEditValue;
+
+    bool _editing = false;
+    std::string _editStr;
+    int _cursor = 0;
+    bool _showError = false;
+
+    void enterEdit();
+    void confirmEdit();
+    void discardEdit();
 
 public:
-    TextField(std::string label, std::function<std::string()> getValue);
+    /**
+     * @param label       Field label shown before the value.
+     * @param getValue    Returns current store value for display.
+     * @param trySetValue Called on Enter; returns false to reject and stay in edit.
+     * @param errorMsg    Shown in red below the field on rejection.
+     * @param editingFlag Shared flag set true while this field is in edit mode.
+     * @param getEditValue Optional; returns initial edit buffer content. Defaults to getValue.
+     */
+    TextField(std::string label,
+              std::function<std::string()> getValue,
+              std::function<bool(const std::string&)> trySetValue,
+              std::string errorMsg,
+              std::shared_ptr<bool> editingFlag,
+              std::function<std::string()> getEditValue = {});
+
+    bool OnEvent(ftxui::Event e) override;
     ftxui::Element OnRender() override;
 };
 

@@ -108,7 +108,7 @@ void App::run() {
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
     auto list_pane  = MakeTaskListPane(_labels, _selected);
-    DetailPane detail_pane(_store, _ids, _selected);
+    DetailPane detail_pane(_store, _ids, _selected, [this]{ rebuildTree(); });
     auto detail_component = detail_pane.component();
 
     // Container::Horizontal routes keyboard focus between the two panes
@@ -245,7 +245,7 @@ void App::run() {
             screen.ExitLoopClosure()();
             return true;
         }
-        if (e == Event::Character('d') && !_ids.empty()) {
+        if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing()) {
             _delFocus = selTask().deps.isEmpty() ? 0 : 1;
             _delDialogOpen = true;
             return true;
