@@ -17,10 +17,12 @@ DetailPane::DetailPane(TaskStore& store,
     using namespace ftxui;
 
     // Safe task lookup — returns nullptr when the list is empty.
-    auto getTask = [this]() -> const Task* {
-        if (_ids.empty()) return nullptr;
-        int sel = std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1));
-        return &_store.get(_ids[sel]);
+    // Captures the three App-owned references directly so no DetailPane
+    // address is involved; the component remains valid regardless of pane lifetime.
+    auto getTask = [&store = _store, &ids = _ids, &sel = _selected]() -> const Task* {
+        if (ids.empty()) return nullptr;
+        int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
+        return &store.get(ids[i]);
     };
 
     // Non-focusable header: read-only fields that cannot be edited.
