@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <cstdint>
 #include "SmartArray.h"
@@ -32,3 +33,11 @@ struct Task {
     /** @brief Returns the creation date formatted as DD/MM/YY, or "none" if unset. */
     std::string createdAtStr() const;
 };
+
+/**
+ * @brief Parses a due date string in DD/MM/YY format.
+ *
+ * Returns -1 for empty string (no due date), the Unix epoch seconds for a
+ * valid date, or nullopt for invalid or impossible dates (e.g. "31/02/26").
+ */
+std::optional<int64_t> parseDueDate(const std::string& s);

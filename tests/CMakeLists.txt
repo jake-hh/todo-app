@@ -28,7 +28,15 @@ add_executable(fileIOTests
 target_include_directories(fileIOTests PRIVATE ../src/smartArray ../src/app/data)
 target_link_libraries(fileIOTests GTest::gtest_main SmartArray)
 
+add_executable(parseDueDateTests
+    parseDueDateTests.cpp
+    ../src/app/data/Task.cpp
+)
+target_include_directories(parseDueDateTests PRIVATE ../src/smartArray ../src/app/data)
+target_link_libraries(parseDueDateTests GTest::gtest_main SmartArray)
+
 include(GoogleTest)
 gtest_discover_tests(smartArrayTests)
 gtest_discover_tests(taskStoreTests)
 gtest_discover_tests(fileIOTests)
+gtest_discover_tests(parseDueDateTests)
