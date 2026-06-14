@@ -38,6 +38,33 @@ TEST(ParseDueDate, ImpossibleDateReturnsNullopt) {
     EXPECT_FALSE(parseDueDate("32/01/26").has_value());
 }
 
+TEST(ParseDueDate, BoundaryYears) {
+    // YY=00 should map to 2000, not 1900
+    std::tm t = {};
+    t.tm_mday  = 1;
+    t.tm_mon   = 0;   // January
+    t.tm_year  = 100; // 2000
+    t.tm_isdst = -1;
+    int64_t expected2000 = static_cast<int64_t>(std::mktime(&t));
+
+    auto result = parseDueDate("01/01/00");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result, expected2000);
+
+    // YY=99 should map to 2099
+    t          = {};
+    t.tm_mday  = 31;
+    t.tm_mon   = 11;  // December
+    t.tm_year  = 199; // 2099
+    t.tm_isdst = -1;
+    int64_t expected2099 = static_cast<int64_t>(std::mktime(&t));
+
+    result = parseDueDate("31/12/99");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(*result, expected2099);
+}
+
+
 TEST(ParseDueDate, RoundTrip) {
     // Format a known epoch with dueDateStr(), parse it back, check same day.
     std::tm t  = {};
