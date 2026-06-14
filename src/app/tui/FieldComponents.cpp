@@ -60,14 +60,18 @@ TextField::TextField(std::string label,
 
 bool TextField::OnEvent(Event e) {
     if (_editing) {
-        if (e.is_mouse()) {
-            // Press outside the box: discard and let click reach its target.
-            if (e.mouse().motion == Mouse::Pressed && !_box.Contain(e.mouse().x, e.mouse().y)) {
+        if (e.is_mouse() && e.mouse().motion == Mouse::Pressed) {
+            if (_box.Contain(e.mouse().x, e.mouse().y)) {
+                // Click on self while editing → save (same as Enter).
+                if (CaptureMouse(e)) { confirmEdit(); return true; }
+            } else {
+                // Click elsewhere → discard and let the click reach its target.
                 discardEdit();
                 return false;
             }
-            return false;
         }
+        if (e.is_mouse()) return false;
+
         if (e == Event::Return) {
             confirmEdit();
             return true;
@@ -102,10 +106,14 @@ bool TextField::OnEvent(Event e) {
         return true;
     }
 
-    // Hover mode: Enter activates edit.
+    // Hover mode: Enter or click-on-focused activates edit.
     if (Focused() && e == Event::Return) {
         enterEdit();
         return true;
+    }
+    if (e.is_mouse() && e.mouse().motion == Mouse::Pressed
+            && _box.Contain(e.mouse().x, e.mouse().y) && Focused()) {
+        if (CaptureMouse(e)) { enterEdit(); return true; }
     }
     return FieldBase::OnEvent(e);
 }
