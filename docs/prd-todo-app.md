@@ -64,7 +64,7 @@ A TUI application written in C++ using ftxui that manages a list of tasks stored
 
 **Entry point** (`src/app/main.cpp`) — parses optional CLI arg for file path, defaults to `tasks.bin` next to the executable, and passes the resolved path to `App`.
 
-`App` owns the file path, calls `FileIO::load` in its constructor (missing file → empty store + UI notice; corrupt file → stderr + exit), and calls `FileIO::save` on quit. A swap file is written after every mutation for crash recovery (see `prd-feat-edit.md`).
+`App` owns the file path, calls `FileIO::load` in its constructor (missing file → empty store + UI notice; corrupt file → stderr + exit), and calls `FileIO::save` on quit. A swap file is written after every mutation for crash recovery (see `docs/feat-edit/prd.md`).
 
 ### Key Architecture Decisions
 

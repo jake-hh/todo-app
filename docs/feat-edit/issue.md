@@ -1,5 +1,5 @@
-@docs/prd-feat-edit.md 
-@docs/plan-feat-edit.md 
+@docs/feat-edit/prd.md 
+@docs/feat-edit/plan.md 
 
 # We implemented Phases 1-4, but encountered a problem
 

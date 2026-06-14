@@ -1,6 +1,6 @@
 # Plan: Create and Edit Tasks
 
-> Source PRD: docs/prd-feat-edit.md
+> Source PRD: docs/feat-edit/prd.md
 
 ## Architectural decisions
 
