@@ -107,12 +107,13 @@ void App::run() {
 
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
-    auto list_pane   = MakeTaskListPane(_labels, _selected);
-    auto detail_pane = MakeDetailPane(_store, _ids, _selected);
+    auto list_pane  = MakeTaskListPane(_labels, _selected);
+    DetailPane detail_pane(_store, _ids, _selected);
+    auto detail_component = detail_pane.component();
 
     // Container::Horizontal routes keyboard focus between the two panes
     // and handles focus cycling.
-    auto layout = Container::Horizontal({list_pane, detail_pane});
+    auto layout = Container::Horizontal({list_pane, detail_component});
 
     // Helpers shared by the renderer and event handler to avoid duplicating
     // the clamped-selection and store-lookup logic.
@@ -174,7 +175,7 @@ void App::run() {
             vbox({
                 text(" Details") | bold,
                 separator(),
-                detail_pane->Render() | flex,
+                detail_component->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w),
         });
         if (!_delDialogOpen || _ids.empty()) return main;
@@ -225,6 +226,19 @@ void App::run() {
                 return true;
             }
             return true; // consume all other events while dialog is open
+        }
+
+        // Pane focus switching.
+        // l/Enter from list pane → enter detail pane (title field).
+        // Esc/h from detail pane → return to list pane.
+        if ((e == Event::Character('l') || e == Event::Return) && list_pane->Focused()) {
+            detail_pane.takeFocus();
+            return true;
+        }
+        if ((e == Event::Escape || e == Event::Character('h'))
+                && detail_component->Focused() && !detail_pane.isEditing()) {
+            list_pane->TakeFocus();
+            return true;
         }
 
         if (e == Event::Character('q')) {

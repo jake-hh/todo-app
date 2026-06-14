@@ -23,6 +23,7 @@ add_executable(SmartArrayApp
     src/app/tui/App.cpp
     src/app/tui/TaskListPane.cpp
     src/app/tui/DetailPane.cpp
+    src/app/tui/FieldComponents.cpp
 )
 target_link_libraries(SmartArrayApp ftxui::component SmartArray)
 
