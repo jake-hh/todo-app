@@ -113,7 +113,8 @@ bool TextField::OnEvent(Event e) {
     }
     if (e.is_mouse() && e.mouse().motion == Mouse::Pressed
             && _box.Contain(e.mouse().x, e.mouse().y) && Focused()) {
-        if (CaptureMouse(e)) { enterEdit(); return true; }
+        enterEdit();
+        return true;
     }
     return FieldBase::OnEvent(e);
 }
