@@ -25,10 +25,20 @@ DetailPane::DetailPane(TaskStore& store,
         return &store.get(ids[i]);
     };
 
-    // Non-focusable header: read-only fields that cannot be edited.
-    auto header = Renderer([getTask] {
+    auto row = [](const std::string& label, const std::string& val) -> Element {
+        return hbox({text(label) | bold, text(val)});
+    };
+
+    // Non-focusable read-only fields.
+    auto id_header = Renderer([getTask, row] {
         const Task* t = getTask();
         if (!t) return text(" (no tasks)");
+        return row(" ID: ", std::to_string(t->id));
+    });
+
+    auto footer = Renderer([getTask, row] {
+        const Task* t = getTask();
+        if (!t) return text("");
 
         std::string deps;
         if (t->deps.isEmpty()) {
@@ -40,12 +50,7 @@ DetailPane::DetailPane(TaskStore& store,
             }
         }
 
-        auto row = [](const std::string& label, const std::string& val) -> Element {
-            return hbox({text(label) | bold, text(val)});
-        };
-
         return vbox({
-            row(" ID: ",      std::to_string(t->id)),
             row(" Created: ", t->createdAtStr()),
             row(" Deps: ",    deps),
         });
@@ -60,12 +65,13 @@ DetailPane::DetailPane(TaskStore& store,
     _titleField = title_f;
 
     auto container = Container::Vertical({
-        header,
+        id_header,
         title_f,
         status_f,
         priority_f,
         duedate_f,
         desc_f,
+        footer,
     });
 
     // Remap j/k to arrow keys so vim-style navigation works within the pane.

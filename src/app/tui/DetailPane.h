@@ -8,8 +8,8 @@
 /**
  * @brief Focusable detail view for the selected task.
  *
- * Renders a non-focusable header (ID, created, deps) followed by
- * focusable hover fields for each editable attribute.
+ * Renders fields in order: ID, title, status, priority, due, description,
+ * created, deps. Focusable hover fields cover each editable attribute.
  * Field navigation uses j/k or arrow keys.
  */
 class DetailPane {
