@@ -110,6 +110,10 @@ Good tests verify observable behavior through public interfaces only — no insp
 - Configurable color themes.
 - Generating Doxygen HTML (comments in code are sufficient per requirements).
 
+## Related Documents
+
+- `docs/feat-edit/prd.md` — deep-dive spec for the edit/create feature only (field modes, key bindings, swap file, date parsing). Contains more detail on edit behavior than this PRD, not contradictions.
+
 ## Further Notes
 
 - The project must compile cleanly with the Visual Studio compiler (MSVC). Avoid GCC/Clang extensions. Use `int64_t` not `time_t` in binary file format to avoid platform size differences.
