@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <string>
+#include <utility>
 #include <vector>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -24,7 +26,7 @@ class DepSelector {
     unsigned _taskId = 0;
     int _cursor = 0;
     int _offset = 0;
-    std::vector<unsigned> _candidates; // task IDs shown in list, in store order
+    std::vector<std::pair<unsigned, std::string>> _candidates; // {id, title} in store order
 
     void buildCandidates();
     void toggle();

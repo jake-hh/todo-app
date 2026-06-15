@@ -14,7 +14,7 @@ void DepSelector::buildCandidates() {
     _candidates.clear();
     for (auto& [id, task] : _store.tasks())
         if (id != _taskId)
-            _candidates.push_back(id);
+            _candidates.push_back({id, task.title});
 }
 
 
@@ -30,7 +30,7 @@ void DepSelector::clampScroll() {
 
 void DepSelector::toggle() {
     if (_candidates.empty()) return;
-    unsigned depId = _candidates[_cursor];
+    unsigned depId = _candidates[_cursor].first;
     if (_store.wouldCycle(_taskId, depId)) return;
 
     if (_store.hasDep(_taskId, depId))
@@ -66,14 +66,13 @@ Element DepSelector::render() {
 
     int end = std::min(_offset + MAX_VISIBLE, static_cast<int>(_candidates.size()));
     for (int i = _offset; i < end; i++) {
-        unsigned cid = _candidates[i];
-        const Task& ct = _store.get(cid);
+        auto [cid, ctitle] = _candidates[i];
 
         bool isDep = _store.hasDep(_taskId, cid);
         bool forbidden = _store.wouldCycle(_taskId, cid);
 
         std::string check = isDep ? "[x] " : "[ ] ";
-        std::string title = ct.title.empty() ? "New task" : ct.title;
+        std::string title = ctitle.empty() ? "New task" : ctitle;
         Element row = text(check + "#" + std::to_string(cid) + "  " + title);
 
         if (forbidden)
