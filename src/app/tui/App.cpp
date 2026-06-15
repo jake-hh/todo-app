@@ -186,6 +186,16 @@ void App::run() {
     // open it intercepts every event first and consumes them all (returns true),
     // preventing the underlying panes from acting on stray keypresses.
     auto root = CatchEvent(renderer, [&](Event e) {
+        // Block mouse interactions that bypass TextField's own event handler.
+        // Container routes mouse events by position, so clicks/hovers in the
+        // list pane never reach the focused TextField in the detail pane.
+        if (detail_pane.isEditing() && e.is_mouse()) {
+            if (e.mouse().motion == Mouse::Moved)
+                return true;  // Bug 1: consume hover so Menu can't TakeFocus
+            if (e.mouse().motion == Mouse::Pressed)
+                detail_pane.cancelEdit();  // Bug 2: discard edit before click propagates
+        }
+
         if (_delDialogOpen && !_ids.empty()) {
             const ::Task& t = selTask();
             bool hasDeps = !t.deps.isEmpty();

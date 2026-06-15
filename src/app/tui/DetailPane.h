@@ -39,4 +39,7 @@ public:
 
     /** @brief Returns true while a text field is being edited. */
     bool isEditing() const { return _cancelEdit && bool(*_cancelEdit); }
+
+    /** @brief Cancels any active field edit, reverting to hover state. */
+    void cancelEdit() { if (_cancelEdit && *_cancelEdit) (*_cancelEdit)(); }
 };
