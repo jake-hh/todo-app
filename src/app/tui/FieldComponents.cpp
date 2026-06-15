@@ -132,8 +132,10 @@ Element TextField::OnRender() {
                              ? std::string(1, _editStr[_cursor]) : " ";
         std::string after  = _cursor < static_cast<int>(_editStr.size())
                              ? _editStr.substr(_cursor + 1) : "";
-        Element editRow = hbox({text(_label) | bold, text(before), text(at) | inverted, text(after)})
-                          | bgcolor(Color::GrayDark);
+        Element editRow = hbox({
+            text(_label) | bold,
+            hbox({text(before), text(at) | inverted, text(after)}) | bgcolor(Color::GrayDark) | xflex,
+        });
         if (_showError && !_errorMsg.empty())
             return vbox({editRow, text(_errorMsg) | color(Color::Red)}) | reflect(_box);
         return editRow | reflect(_box);
