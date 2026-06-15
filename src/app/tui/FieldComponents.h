@@ -79,17 +79,20 @@ public:
 /**
  * @brief Focusable cycle field. Highlights when focused.
  *
- * Phase 4 will add Enter-to-cycle behaviour that advances through the
- * field's allowed values and saves to the store immediately.
+ * Enter advances through the field's allowed values and saves to the store
+ * immediately via onCycle.
  */
 class CycleField : public FieldBase {
 private:
     std::string _label;
     std::function<std::string()> _getValue;
+    std::function<void()> _onCycle;
 
 public:
     CycleField(std::string label, std::function<std::string()> getValue,
+               std::function<void()> onCycle,
                std::shared_ptr<std::function<void()>> cancelEdit);
 
+    bool OnEvent(ftxui::Event e) override;
     ftxui::Element OnRender() override;
 };

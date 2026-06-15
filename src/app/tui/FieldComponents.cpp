@@ -148,10 +148,21 @@ Element TextField::OnRender() {
 
 
 CycleField::CycleField(std::string label, std::function<std::string()> getValue,
+                       std::function<void()> onCycle,
                        std::shared_ptr<std::function<void()>> cancelEdit)
     : _label(std::move(label)), _getValue(std::move(getValue))
+    , _onCycle(std::move(onCycle))
 {
     _cancelEdit = std::move(cancelEdit);
+}
+
+
+bool CycleField::OnEvent(Event e) {
+    if (Focused() && e == Event::Return) {
+        if (_onCycle) _onCycle();
+        return true;
+    }
+    return FieldBase::OnEvent(e);
 }
 
 

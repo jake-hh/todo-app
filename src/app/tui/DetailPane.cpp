@@ -108,11 +108,31 @@ DetailPane::DetailPane(TaskStore& store,
                           [getTask]() -> std::string { const Task* t = getTask(); return t ? t->title        : ""; },
                           setTitle, "Title cannot be empty", ef);
 
+    auto cycleStatus = [&store = _store, &ids = _ids, &sel = _selected, onMutation]() {
+        if (ids.empty()) return;
+        int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
+        Task updated = store.get(ids[i]);
+        updated.status = (updated.status + 1) % 4;
+        store.update(updated.id, updated);
+        onMutation();
+    };
+
+    auto cyclePriority = [&store = _store, &ids = _ids, &sel = _selected, onMutation]() {
+        if (ids.empty()) return;
+        int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
+        Task updated = store.get(ids[i]);
+        updated.priority = (updated.priority + 1) % 4;
+        store.update(updated.id, updated);
+        onMutation();
+    };
+
     auto status_f   = Make<CycleField>(" Status: ",
-                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; }, ef);
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; },
+                          cycleStatus, ef);
 
     auto priority_f = Make<CycleField>(" Priority: ",
-                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; }, ef);
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; },
+                          cyclePriority, ef);
 
     auto duedate_f  = Make<TextField>(" Due: ",
                           [getTask]() -> std::string { const Task* t = getTask(); return t ? t->dueDateStr() : ""; },
