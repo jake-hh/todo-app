@@ -87,21 +87,25 @@ void App::run() {
     auto layout = Container::Horizontal({list_pane, detail_component});
 
     Box detail_box;
+    int _delFocus = 0;
+    int _recoverFocus = 0;
+    int _quitFocus = 0;
 
     // Helpers shared by the renderer and event handler to avoid duplicating
     // the clamped-selection and store-lookup logic.
     auto selIdx  = [&]() { return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1)); };
     auto selTask = [&]() -> const ::Task& { return _store.get(_ids[selIdx()]); };
 
+    // Shared button renderer for all dialogs.
+    auto btn = [](const std::string& label, bool focused) -> Element {
+        auto e = text("  " + label + "  ") | border;
+        return focused ? e | inverted : e;
+    };
+
     // Builds the delete dialog element for the current selection.
     auto renderDialog = [&]() -> Element {
         const ::Task& t = selTask();
         bool hasDeps = !t.deps.isEmpty();
-
-        auto btn = [](const std::string& label, bool focused) -> Element {
-            auto e = text("  " + label + "  ") | border;
-            return focused ? e | inverted : e;
-        };
 
         Elements buttons;
         if (hasDeps) {
@@ -131,10 +135,6 @@ void App::run() {
 
     // Builds the swap-file recovery dialog element.
     auto renderRecoverDialog = [&]() -> Element {
-        auto btn = [](const std::string& label, bool focused) -> Element {
-            auto e = text("  " + label + "  ") | border;
-            return focused ? e | inverted : e;
-        };
         return vbox({
             text(" Unsaved changes found."),
             text(" A swap file exists from a previous session."),
@@ -149,10 +149,6 @@ void App::run() {
 
     // Builds the quit confirmation dialog element.
     auto renderQuitDialog = [&]() -> Element {
-        auto btn = [](const std::string& label, bool focused) -> Element {
-            auto e = text("  " + label + "  ") | border;
-            return focused ? e | inverted : e;
-        };
         return vbox({
             text(" Save changes before quitting?"),
             separator(),
