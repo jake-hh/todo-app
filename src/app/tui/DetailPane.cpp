@@ -179,10 +179,16 @@ DetailPane::DetailPane(TaskStore& store,
 
     // Remap j/k to arrow keys only when not in edit mode.
     // In edit mode, j/k must pass through as characters to the active TextField.
-    _component = CatchEvent(container, [container, ef](Event e) {
+    auto catchEvent = CatchEvent(container, [container, ef](Event e) {
         if (*ef) return false;  // *ef is std::function — truthy when an edit is active
         if (e == Event::Character('j')) return container->OnEvent(Event::ArrowDown);
         if (e == Event::Character('k')) return container->OnEvent(Event::ArrowUp);
         return false;
+    });
+
+    // Render nothing when the store is empty.
+    _component = Renderer(catchEvent, [catchEvent, &ids = _ids] {
+        if (ids.empty()) return text("");
+        return catchEvent->Render();
     });
 }
