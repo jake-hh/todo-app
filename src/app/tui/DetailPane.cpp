@@ -126,9 +126,27 @@ DetailPane::DetailPane(TaskStore& store,
         onMutation();
     };
 
+    // Warn when a dep is unresolved relative to the parent's progress.
+    // Rows = parent status, cols = dep status, + = no warning, - = warning.
+    //   | o | i | d | w |
+    // o | + | + | + | + |
+    // i | - | + | + | + |
+    // d | - | - | + | + |
+    // w | - | - | + | + |
+    // Rule: warn if dep.status < parent.status && dep.status < 2 (unresolved).
+    auto statusWarning = [&store = _store, getTask]() -> std::string {
+        const Task* t = getTask();
+        if (!t || t->status == 0) return "";
+        for (size_t i = 0; i < t->deps.size(); i++) {
+            int s = store.get(t->deps[i]).status;
+            if (s < 2 && s < t->status) return "has unresolved dependencies";
+        }
+        return "";
+    };
+
     auto status_f   = Make<CycleField>(" Status: ",
                           [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; },
-                          cycleStatus, ef);
+                          cycleStatus, ef, statusWarning);
 
     auto priority_f = Make<CycleField>(" Priority: ",
                           [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; },

@@ -149,9 +149,10 @@ Element TextField::OnRender() {
 
 CycleField::CycleField(std::string label, std::function<std::string()> getValue,
                        std::function<void()> onCycle,
-                       std::shared_ptr<std::function<void()>> cancelEdit)
+                       std::shared_ptr<std::function<void()>> cancelEdit,
+                       std::function<std::string()> getWarning)
     : _label(std::move(label)), _getValue(std::move(getValue))
-    , _onCycle(std::move(onCycle))
+    , _onCycle(std::move(onCycle)), _getWarning(std::move(getWarning))
 {
     _cancelEdit = std::move(cancelEdit);
 }
@@ -169,5 +170,10 @@ bool CycleField::OnEvent(Event e) {
 Element CycleField::OnRender() {
     Element row = hbox({text(_label) | bold, text(_getValue())});
     if (Focused()) row = row | inverted | focus;
+
+    std::string warning = _getWarning ? _getWarning() : "";
+    if (!warning.empty())
+        return vbox({row, text(warning) | color(Color::Orange1)}) | reflect(_box);
+
     return row | reflect(_box);
 }

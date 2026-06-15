@@ -87,11 +87,13 @@ private:
     std::string _label;
     std::function<std::string()> _getValue;
     std::function<void()> _onCycle;
+    std::function<std::string()> _getWarning; ///< Returns warning text, or "" for none.
 
 public:
     CycleField(std::string label, std::function<std::string()> getValue,
                std::function<void()> onCycle,
-               std::shared_ptr<std::function<void()>> cancelEdit);
+               std::shared_ptr<std::function<void()>> cancelEdit,
+               std::function<std::string()> getWarning = {});
 
     bool OnEvent(ftxui::Event e) override;
     ftxui::Element OnRender() override;
