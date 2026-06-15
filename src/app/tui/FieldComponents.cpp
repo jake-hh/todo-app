@@ -37,7 +37,6 @@ void TextField::confirmEdit() {
 
 
 void TextField::discardEdit() {
-    _editStr.clear();
     _editing = false;
     _showError = false;
     if (_cancelEdit) *_cancelEdit = nullptr;
@@ -54,6 +53,8 @@ TextField::TextField(std::string label,
     , _getValue(std::move(getValue))
     , _trySetValue(std::move(trySetValue))
     , _errorMsg(std::move(errorMsg))
+    // _getValue is initialised above — safe to copy as fallback for _getEditValue.
+    // If member order in the header ever changes, this line must move with _getValue.
     , _getEditValue(getEditValue ? std::move(getEditValue) : _getValue)
 {
     _cancelEdit = std::move(cancelEdit);
@@ -65,7 +66,9 @@ bool TextField::OnEvent(Event e) {
         if (e.is_mouse() && e.mouse().motion == Mouse::Pressed) {
             if (_box.Contain(e.mouse().x, e.mouse().y)) {
                 // Click on self while editing → save (same as Enter).
-                if (CaptureMouse(e)) { confirmEdit(); return true; }
+                CaptureMouse(e);
+                confirmEdit();
+                return true;
             } else {
                 // Click elsewhere → discard and let the click reach its target.
                 discardEdit();
