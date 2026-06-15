@@ -85,6 +85,12 @@ public:
     void recalcNextId();
 
     /**
+     * @brief Returns true if @p depId is already a direct dependency of @p taskId.
+     * Returns false if @p taskId does not exist.
+     */
+    bool hasDep(unsigned taskId, unsigned depId) const;
+
+    /**
      * @brief Returns true if adding @p depId as a dependency of @p taskId would
      *        create a cycle in the dependency graph.
      */

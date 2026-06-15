@@ -130,6 +130,16 @@ void TaskStore::recalcNextId() {
 }
 
 
+bool TaskStore::hasDep(unsigned taskId, unsigned depId) const {
+    auto it = _tasks.find(taskId);
+    if (it == _tasks.end()) return false;
+    const SmartArray<unsigned>& deps = it->second.deps;
+    for (size_t i = 0; i < deps.size(); i++)
+        if (deps[i] == depId) return true;
+    return false;
+}
+
+
 bool TaskStore::wouldCycle(unsigned taskId, unsigned depId) const {
     // Cycle exists if taskId is reachable from depId via existing deps.
     std::set<unsigned> visited;

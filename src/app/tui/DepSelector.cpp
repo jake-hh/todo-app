@@ -33,12 +33,7 @@ void DepSelector::toggle() {
     unsigned depId = _candidates[_cursor];
     if (_store.wouldCycle(_taskId, depId)) return;
 
-    const Task& t = _store.get(_taskId);
-    bool isDep = false;
-    for (size_t i = 0; i < t.deps.size(); i++)
-        if (t.deps[i] == depId) { isDep = true; break; }
-
-    if (isDep)
+    if (_store.hasDep(_taskId, depId))
         _store.removeDep(_taskId, depId);
     else
         _store.addDep(_taskId, depId);
@@ -66,8 +61,6 @@ Element DepSelector::render() {
         return vbox(std::move(body)) | border | clear_under | center;
     }
 
-    const Task& cur = _store.get(_taskId);
-
     if (_offset > 0)
         body.push_back(text("  \u2191 more") | dim);
 
@@ -76,10 +69,7 @@ Element DepSelector::render() {
         unsigned cid = _candidates[i];
         const Task& ct = _store.get(cid);
 
-        bool isDep = false;
-        for (size_t j = 0; j < cur.deps.size(); j++)
-            if (cur.deps[j] == cid) { isDep = true; break; }
-
+        bool isDep = _store.hasDep(_taskId, cid);
         bool forbidden = _store.wouldCycle(_taskId, cid);
 
         std::string check = isDep ? "[x] " : "[ ] ";
