@@ -160,7 +160,7 @@ CycleField::CycleField(std::string label, std::function<std::string()> getValue,
 
 bool CycleField::OnEvent(Event e) {
     if (Focused() && e == Event::Return) {
-        if (_onCycle) _onCycle();
+        _onCycle();
         return true;
     }
     return FieldBase::OnEvent(e);
