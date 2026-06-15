@@ -12,4 +12,4 @@
  * @param selected Index of the currently selected task (shared state).
  * @return ftxui component handling arrow keys and j/k navigation.
  */
-ftxui::Component MakeTaskListPane(std::vector<std::string>& labels, int& selected);
+ftxui::Component MakeTaskListPane(std::vector<std::string>& labels, int& selected, int& focusedEntry);

@@ -4,12 +4,16 @@
 #include <ftxui/dom/elements.hpp>
 
 
-ftxui::Component MakeTaskListPane(std::vector<std::string>& labels, int& selected) {
+ftxui::Component MakeTaskListPane(std::vector<std::string>& labels, int& selected, int& focusedEntry) {
     using namespace ftxui;
 
     // Menu handles arrow key navigation and updates `selected` in place.
     // It takes raw pointers so changes to `labels` are reflected immediately.
-    auto menu = Menu(&labels, &selected);
+    // focused_entry tracks the keyboard cursor independently of the selected item,
+    // allowing the caller to sync both when changing selection externally (e.g. 'n').
+    MenuOption opt = MenuOption::Vertical();
+    opt.focused_entry = &focusedEntry;
+    auto menu = Menu(&labels, &selected, opt);
 
     // Wrap in a Renderer that applies yframe so the selected entry scrolls
     // into view when the pane is shorter than the full list.

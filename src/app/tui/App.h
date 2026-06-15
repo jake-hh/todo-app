@@ -16,6 +16,7 @@ private:
     std::vector<unsigned> _ids;        // cached task IDs in list order; index matches _labels
     std::vector<std::string> _labels; // cached strings shown in the list pane
     int _selected = 0;                 // index of the currently highlighted task
+    int _focusedEntry = 0;             // Menu keyboard cursor; must be kept in sync with _selected on external changes
     bool _delDialogOpen = false;       // whether the delete confirmation dialog is visible
     int  _delFocus = 0;                // focused button index within the delete dialog
 

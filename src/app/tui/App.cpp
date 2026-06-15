@@ -107,7 +107,7 @@ void App::run() {
 
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
-    auto list_pane  = MakeTaskListPane(_labels, _selected);
+    auto list_pane  = MakeTaskListPane(_labels, _selected, _focusedEntry);
     DetailPane detail_pane(_store, _ids, _selected, [this]{ rebuildTree(); });
     auto detail_component = detail_pane.component();
 
@@ -257,7 +257,7 @@ void App::run() {
             unsigned newId = _store.create("", "", 2, 0, -1LL);
             rebuildTree();
             for (int i = 0; i < static_cast<int>(_ids.size()); i++) {
-                if (_ids[i] == newId) { _selected = i; break; }
+                if (_ids[i] == newId) { _selected = _focusedEntry = i; break; }
             }
             detail_pane.takeFocus();
             return true;
