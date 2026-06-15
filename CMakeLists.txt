@@ -27,6 +27,15 @@ add_executable(SmartArrayApp
 )
 target_link_libraries(SmartArrayApp ftxui::component SmartArray)
 
+add_executable(SeedData
+    src/app/seedData.cpp
+    src/app/data/Task.cpp
+    src/app/data/TaskStore.cpp
+    src/app/data/FileIO.cpp
+)
+target_include_directories(SeedData PRIVATE src/app)
+target_link_libraries(SeedData SmartArray)
+
 add_executable(SmartArrayDemo src/app/smartArrayDemo.cpp)
 target_link_libraries(SmartArrayDemo SmartArray)
 
