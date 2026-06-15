@@ -334,3 +334,8 @@ TEST(TaskStoreTest, RemoveDep_NonexistentDep_NoOp) {
     store.removeDep(a, b); // b was never a dep — should not throw
     EXPECT_EQ(store.get(a).deps.size(), 0u);
 }
+
+TEST(TaskStoreTest, RemoveDep_UnknownTask_Throws) {
+    TaskStore store;
+    EXPECT_THROW(store.removeDep(999, 1), std::out_of_range);
+}
