@@ -71,6 +71,7 @@ public:
               std::function<std::string()> getEditValue = {});
 
     bool OnEvent(ftxui::Event e) override;
+
     ftxui::Element OnRender() override;
 };
 
@@ -89,5 +90,6 @@ private:
 public:
     CycleField(std::string label, std::function<std::string()> getValue,
                std::shared_ptr<std::function<void()>> cancelEdit);
+
     ftxui::Element OnRender() override;
 };

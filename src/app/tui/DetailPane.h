@@ -31,15 +31,24 @@ public:
     DetailPane(TaskStore& store, const std::vector<unsigned>& ids, int& selected,
                std::function<void()> onMutation);
 
-    /** @brief Returns the ftxui component to place in the layout. */
+    /**
+     * @brief Returns the ftxui component to place in the layout.
+     * */
     ftxui::Component component() const { return _component; }
 
-    /** @brief Moves focus to the title field. */
+    /**
+     * @brief Moves focus to the title field.
+     * */
     void takeFocus() { _titleField->TakeFocus(); }
 
-    /** @brief Returns true while a text field is being edited. */
+    /**
+     * @brief Returns true while a text field is being edited.
+     * std::function is falsy when empty (no edit), truthy when holding a callable
+     * */
     bool isEditing() const { return _cancelEdit && bool(*_cancelEdit); }
 
-    /** @brief Cancels any active field edit, reverting to hover state. */
+    /**
+     * @brief Cancels any active field edit, reverting to hover state.
+     * */
     void cancelEdit() { if (_cancelEdit && *_cancelEdit) (*_cancelEdit)(); }
 };
