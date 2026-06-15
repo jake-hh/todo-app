@@ -1,14 +1,16 @@
 #include <gtest/gtest.h>
 #include <cstdio>
+#include <filesystem>
 #include "TaskStore.h"
 #include "FileIO.h"
 
 static const std::string kTestFile = "/tmp/fileio_test.bin";
+static const std::string kSwapFile = "/tmp/fileio_test.bin.swp";
 
-// Helper: remove test file before/after each test
+// Helper: remove test files before/after each test
 struct FileIOTest : ::testing::Test {
-    void SetUp() override    { std::remove(kTestFile.c_str()); }
-    void TearDown() override { std::remove(kTestFile.c_str()); }
+    void SetUp() override    { std::remove(kTestFile.c_str()); std::remove(kSwapFile.c_str()); }
+    void TearDown() override { std::remove(kTestFile.c_str()); std::remove(kSwapFile.c_str()); }
 };
 
 // ── round-trip: empty store ───────────────────────────────────────────────────
@@ -112,4 +114,44 @@ TEST_F(FileIOTest, RoundTripMultipleTasks) {
     // nextId should be max_id + 1 = 3
     unsigned next = dst.create("t3", "", 0, 0, -1);
     EXPECT_EQ(next, last + 1);
+}
+
+// ── file appearance / disappearance ──────────────────────────────────────────
+
+TEST_F(FileIOTest, SaveCreatesFile) {
+    ASSERT_FALSE(std::filesystem::exists(kTestFile));
+    TaskStore s;
+    s.create("t", "", 0, 0, -1);
+    FileIO::save(kTestFile, s);
+    EXPECT_TRUE(std::filesystem::exists(kTestFile));
+}
+
+TEST_F(FileIOTest, LoadMissingFileThrows) {
+    ASSERT_FALSE(std::filesystem::exists(kTestFile));
+    TaskStore s;
+    EXPECT_THROW(FileIO::load(kTestFile, s), std::runtime_error);
+}
+
+TEST_F(FileIOTest, RemoveDeletesFile) {
+    TaskStore s;
+    FileIO::save(kTestFile, s);
+    ASSERT_TRUE(std::filesystem::exists(kTestFile));
+    std::remove(kTestFile.c_str());
+    EXPECT_FALSE(std::filesystem::exists(kTestFile));
+}
+
+TEST_F(FileIOTest, SwapLifecycle) {
+    // Simulate: mutation → swap written; quit → swap removed, main untouched.
+    TaskStore s;
+    s.create("task", "", 2, 0, -1);
+
+    // Swap appears after mutation.
+    FileIO::save(kSwapFile, s);
+    EXPECT_TRUE(std::filesystem::exists(kSwapFile));
+    EXPECT_FALSE(std::filesystem::exists(kTestFile));
+
+    // Clean quit: swap removed, main still absent (Phase 7 writes main).
+    std::remove(kSwapFile.c_str());
+    EXPECT_FALSE(std::filesystem::exists(kSwapFile));
+    EXPECT_FALSE(std::filesystem::exists(kTestFile));
 }
