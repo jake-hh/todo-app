@@ -65,6 +65,7 @@ Element DepSelector::render() {
         body.push_back(text("  \u2191 more") | dim);
 
     int end = std::min(_offset + MAX_VISIBLE, static_cast<int>(_candidates.size()));
+    _rowBoxes.resize(end - _offset);
     for (int i = _offset; i < end; i++) {
         auto [cid, ctitle] = _candidates[i];
 
@@ -80,7 +81,7 @@ Element DepSelector::render() {
         else if (i == _cursor)
             row = row | inverted;
 
-        body.push_back(row);
+        body.push_back(row | reflect(_rowBoxes[i - _offset]));
     }
 
     if (_offset + MAX_VISIBLE < static_cast<int>(_candidates.size()))
@@ -108,6 +109,31 @@ bool DepSelector::onEvent(Event e) {
     }
     if (e == Event::Character(' ') || e == Event::Return) {
         toggle();
+        return true;
+    }
+    if (e.is_mouse()) {
+        auto& m = e.mouse();
+        if (m.button == Mouse::WheelUp && _cursor > 0) {
+            _cursor--;
+            clampScroll();
+            return true;
+        }
+        if (m.button == Mouse::WheelDown && _cursor < n - 1) {
+            _cursor++;
+            clampScroll();
+            return true;
+        }
+        if (m.button == Mouse::Left && m.motion == Mouse::Pressed) {
+            for (int i = 0; i < static_cast<int>(_rowBoxes.size()); i++) {
+                auto& box = _rowBoxes[i];
+                if (m.y >= box.y_min && m.y <= box.y_max) {
+                    int candidateIdx = _offset + i;
+                    _cursor = candidateIdx;
+                    toggle();
+                    return true;
+                }
+            }
+        }
         return true;
     }
     return true; // consume all events while open

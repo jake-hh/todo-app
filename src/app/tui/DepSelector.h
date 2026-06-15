@@ -6,6 +6,7 @@
 #include <vector>
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/box.hpp>
 #include "../data/TaskStore.h"
 
 
@@ -27,6 +28,7 @@ class DepSelector {
     int _cursor = 0;
     int _offset = 0;
     std::vector<std::pair<unsigned, std::string>> _candidates; // {id, title} in store order
+    std::vector<ftxui::Box> _rowBoxes; // screen boxes for visible rows, parallel to rendered rows
 
     void buildCandidates();
     void toggle();
