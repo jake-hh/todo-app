@@ -29,6 +29,7 @@ class DepSelector {
     int _offset = 0;
     std::vector<std::pair<unsigned, std::string>> _candidates; // {id, title} in store order
     std::vector<ftxui::Box> _rowBoxes; // screen boxes for visible rows, parallel to rendered rows
+    ftxui::Box _dialogBox;             // screen box of the bordered dialog (for click-outside-to-close)
 
     void buildCandidates();
     void toggle();

@@ -58,7 +58,7 @@ Element DepSelector::render() {
 
     if (_candidates.empty()) {
         body.push_back(text(" (no other tasks)") | dim);
-        return vbox(std::move(body)) | border | clear_under | center;
+        return vbox(std::move(body)) | border | clear_under | reflect(_dialogBox) | center;
     }
 
     if (_offset > 0)
@@ -87,7 +87,7 @@ Element DepSelector::render() {
     if (_offset + MAX_VISIBLE < static_cast<int>(_candidates.size()))
         body.push_back(text("  \u2193 more") | dim);
 
-    return vbox(std::move(body)) | border | clear_under | center;
+    return vbox(std::move(body)) | border | clear_under | reflect(_dialogBox) | center;
 }
 
 
@@ -124,6 +124,12 @@ bool DepSelector::onEvent(Event e) {
             return true;
         }
         if (m.button == Mouse::Left && m.motion == Mouse::Pressed) {
+            bool insideDialog = m.x >= _dialogBox.x_min && m.x <= _dialogBox.x_max &&
+                                m.y >= _dialogBox.y_min && m.y <= _dialogBox.y_max;
+            if (!insideDialog) {
+                close();
+                return true;
+            }
             for (int i = 0; i < static_cast<int>(_rowBoxes.size()); i++) {
                 auto& box = _rowBoxes[i];
                 if (m.y >= box.y_min && m.y <= box.y_max) {
