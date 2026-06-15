@@ -10,6 +10,7 @@
 #include "../data/FileIO.h"
 #include "TaskListPane.h"
 #include "DetailPane.h"
+#include "Dialog.h"
 
 
 App::App(std::string filePath)
@@ -87,81 +88,31 @@ void App::run() {
     auto layout = Container::Horizontal({list_pane, detail_component});
 
     Box detail_box;
-    int _delFocus = 0;
-    int _recoverFocus = 0;
-    int _quitFocus = 0;
-    Box delBoxes[3];    // bounding boxes for delete dialog buttons (max 3)
-    Box recoverBoxes[2];
-    Box quitBoxes[2];
+    Dialog delDialog, recoverDialog, quitDialog;
 
     // Helpers shared by the renderer and event handler to avoid duplicating
     // the clamped-selection and store-lookup logic.
     auto selIdx  = [&]() { return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1)); };
     auto selTask = [&]() -> const ::Task& { return _store.get(_ids[selIdx()]); };
 
-    // Shared button renderer for all dialogs.
-    auto btn = [](const std::string& label, bool focused) -> Element {
-        auto e = text("  " + label + "  ") | border;
-        return focused ? e | inverted : e;
-    };
-
-    // Builds the delete dialog element for the current selection.
-    auto renderDialog = [&]() -> Element {
-        const ::Task& t = selTask();
-        bool hasDeps = !t.deps.isEmpty();
-
-        Elements buttons;
-        if (hasDeps) {
-            buttons.push_back(btn("Delete All",      _delFocus == 0) | reflect(delBoxes[0]));
-            buttons.push_back(text("  "));
-            buttons.push_back(btn("Delete Selected", _delFocus == 1) | reflect(delBoxes[1]));
-            buttons.push_back(text("  "));
-            buttons.push_back(btn("Cancel",          _delFocus == 2) | reflect(delBoxes[2]));
-        } else {
-            buttons.push_back(btn("Delete", _delFocus == 0) | reflect(delBoxes[0]));
-            buttons.push_back(text("  "));
-            buttons.push_back(btn("Cancel", _delFocus == 1) | reflect(delBoxes[1]));
+    recoverDialog.open(
+        {"Recover", "Discard"},
+        {
+            [&]{ try { FileIO::load(_swapPath, _store); } catch (...) {}
+                 rebuildTree(); _recoverDialogOpen = false; },
+            [&]{ std::remove(_swapPath.c_str());
+                 try { FileIO::load(_filePath, _store); } catch (...) {}
+                 rebuildTree(); _recoverDialogOpen = false; },
         }
+    );
 
-        Elements lines;
-        lines.push_back(text(" \"" + t.title + "\""));
-        if (hasDeps)
-            lines.push_back(text(" This task has " +
-                                 std::to_string(t.deps.size()) +
-                                 " direct " +
-                                 (t.deps.size() == 1 ? "dependency." : "dependencies.")));
-        lines.push_back(separator());
-        lines.push_back(hbox(std::move(buttons)) | center);
-
-        return vbox(std::move(lines)) | border | clear_under | center;
-    };
-
-    // Builds the swap-file recovery dialog element.
-    auto renderRecoverDialog = [&]() -> Element {
-        return vbox({
-            text(" Unsaved changes found."),
-            text(" A swap file exists from a previous session."),
-            separator(),
-            hbox({
-                btn("Recover", _recoverFocus == 0) | reflect(recoverBoxes[0]),
-                text("  "),
-                btn("Discard", _recoverFocus == 1) | reflect(recoverBoxes[1]),
-            }) | center,
-        }) | border | clear_under | center;
-    };
-
-    // Builds the quit confirmation dialog element.
-    auto renderQuitDialog = [&]() -> Element {
-        return vbox({
-            text(" Save changes before quitting?"),
-            separator(),
-            hbox({
-                btn("Save [Y]",    _quitFocus == 0) | reflect(quitBoxes[0]),
-                text("  "),
-                btn("Discard [n]", _quitFocus == 1) | reflect(quitBoxes[1]),
-            }) | center,
-        }) | border | clear_under | center;
-    };
+    quitDialog.open(
+        {"Save [Y]", "Discard [n]"},
+        {
+            [&]{ FileIO::save(_filePath, _store); std::remove(_swapPath.c_str()); screen.ExitLoopClosure()(); },
+            [&]{ std::remove(_swapPath.c_str()); screen.ExitLoopClosure()(); },
+        }
+    );
 
     // Renderer wraps the layout to add the border/title chrome around each pane.
     // Terminal::Size() is queried each frame so the split tracks terminal resizes.
@@ -185,10 +136,25 @@ void App::run() {
                 detail_component->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
-        if (_recoverDialogOpen) return dbox({main, renderRecoverDialog()});
-        if (_quitDialogOpen)    return dbox({main, renderQuitDialog()});
+        if (_recoverDialogOpen) {
+            return dbox({main, recoverDialog.render({
+                text(" Unsaved changes found."),
+                text(" A swap file exists from a previous session."),
+            })});
+        }
+        if (_quitDialogOpen) {
+            return dbox({main, quitDialog.render({
+                text(" Save changes before quitting?"),
+            })});
+        }
         if (!_delDialogOpen || _ids.empty()) return main;
-        return dbox({main, renderDialog()});
+        const ::Task& t = selTask();
+        Elements body;
+        body.push_back(text(" \"" + t.title + "\""));
+        if (!t.deps.isEmpty())
+            body.push_back(text(" This task has " + std::to_string(t.deps.size()) +
+                                " direct " + (t.deps.size() == 1 ? "dependency." : "dependencies.")));
+        return dbox({main, delDialog.render(std::move(body))});
     });
 
     // Single CatchEvent handles all keyboard input. When a dialog is open it
@@ -196,45 +162,8 @@ void App::run() {
     // preventing the underlying panes from acting on stray keypresses.
     auto root = CatchEvent(renderer, [&](Event e) {
         if (_recoverDialogOpen) {
-            if (e.is_mouse()) {
-                int x = e.mouse().x, y = e.mouse().y;
-                for (int i = 0; i < 2; i++)
-                    if (recoverBoxes[i].Contain(x, y)) { _recoverFocus = i; break; }
-                if (e.mouse().motion != Mouse::Pressed) return true;
-                if (_recoverFocus == 0) {
-                    try { FileIO::load(_swapPath, _store); } catch (...) {}
-                } else {
-                    std::remove(_swapPath.c_str());
-                    try { FileIO::load(_filePath, _store); } catch (...) {}
-                }
-                rebuildTree();
-                _recoverDialogOpen = false;
-                return true;
-            }
-            if (e == Event::ArrowLeft || e == Event::Character('h')) {
-                if (_recoverFocus > 0) _recoverFocus--;
-                return true;
-            }
-            if (e == Event::ArrowRight || e == Event::Character('l')) {
-                if (_recoverFocus < 1) _recoverFocus++;
-                return true;
-            }
-            if (e == Event::Tab || e == Event::TabReverse) {
-                _recoverFocus = 1 - _recoverFocus;
-                return true;
-            }
-            if (e == Event::Return) {
-                if (_recoverFocus == 0) {
-                    try { FileIO::load(_swapPath, _store); } catch (...) {}
-                } else {
-                    std::remove(_swapPath.c_str());
-                    try { FileIO::load(_filePath, _store); } catch (...) {}
-                }
-                rebuildTree();
-                _recoverDialogOpen = false;
-                return true;
-            }
-            return true; // consume all events while recovery dialog is open
+            recoverDialog.onEvent(e);
+            return true;
         }
 
         // Block mouse interactions that bypass TextField's own event handler.
@@ -248,112 +177,17 @@ void App::run() {
         }
 
         if (_delDialogOpen && !_ids.empty()) {
-            const ::Task& t = selTask();
-            bool hasDeps = !t.deps.isEmpty();
-            int numBtns = hasDeps ? 3 : 2;
-
-            if (e.is_mouse()) {
-                int x = e.mouse().x, y = e.mouse().y;
-                for (int i = 0; i < numBtns; i++)
-                    if (delBoxes[i].Contain(x, y)) { _delFocus = i; break; }
-                if (e.mouse().motion != Mouse::Pressed) return true;
-                unsigned tid = _ids[selIdx()];
-                bool mutated = false;
-                if (!hasDeps) {
-                    if (_delFocus == 0) { _store.removeSplice(tid); mutated = true; }
-                } else {
-                    if (_delFocus == 0)      { _store.removeCascade(tid); mutated = true; }
-                    else if (_delFocus == 1) { _store.removeSplice(tid); mutated = true; }
-                }
-                _delDialogOpen = false;
-                if (mutated) writeSwap();
-                rebuildTree();
-                return true;
-            }
-            if (e == Event::ArrowLeft || e == Event::Character('h')) {
-                if (_delFocus > 0) _delFocus--;
-                return true;
-            }
-            if (e == Event::ArrowRight || e == Event::Character('l')) {
-                if (_delFocus < numBtns - 1) _delFocus++;
-                return true;
-            }
-            if (e == Event::Tab) {
-                _delFocus = (_delFocus + 1) % numBtns;
-                return true;
-            }
-            if (e == Event::TabReverse) {
-                _delFocus = (_delFocus - 1 + numBtns) % numBtns;
-                return true;
-            }
-            if (e == Event::Return) {
-                unsigned tid = _ids[selIdx()];
-                bool mutated = false;
-                if (!hasDeps) {
-                    if (_delFocus == 0) { _store.removeSplice(tid); mutated = true; }
-                    // _delFocus == 1: Cancel — no action
-                } else {
-                    if (_delFocus == 0)      { _store.removeCascade(tid); mutated = true; }
-                    else if (_delFocus == 1) { _store.removeSplice(tid); mutated = true; }
-                    // _delFocus == 2: Cancel — no action
-                }
-                _delDialogOpen = false;
-                if (mutated) writeSwap();
-                rebuildTree();
-                return true;
-            }
-            if (e == Event::Escape || e == Event::Character('q')) {
-                _delDialogOpen = false;
-                return true;
-            }
-            return true; // consume all other events while dialog is open
+            if (e == Event::Escape || e == Event::Character('q')) { _delDialogOpen = false; return true; }
+            delDialog.onEvent(e);
+            return true;
         }
 
         if (_quitDialogOpen) {
-            if (e.is_mouse()) {
-                int x = e.mouse().x, y = e.mouse().y;
-                for (int i = 0; i < 2; i++)
-                    if (quitBoxes[i].Contain(x, y)) { _quitFocus = i; break; }
-                if (e.mouse().motion != Mouse::Pressed) return true;
-                if (_quitFocus == 0) {
-                    FileIO::save(_filePath, _store);
-                    std::remove(_swapPath.c_str());
-                } else {
-                    std::remove(_swapPath.c_str());
-                }
-                screen.ExitLoopClosure()();
-                return true;
-            }
-            if (e == Event::ArrowLeft || e == Event::Character('h')) {
-                if (_quitFocus > 0) _quitFocus--;
-                return true;
-            }
-            if (e == Event::ArrowRight || e == Event::Character('l')) {
-                if (_quitFocus < 1) _quitFocus++;
-                return true;
-            }
-            if (e == Event::Tab || e == Event::TabReverse) {
-                _quitFocus = 1 - _quitFocus;
-                return true;
-            }
-            if (e == Event::Character('Y') || e == Event::Character('y') ||
-                    (e == Event::Return && _quitFocus == 0)) {
-                FileIO::save(_filePath, _store);
-                std::remove(_swapPath.c_str());
-                screen.ExitLoopClosure()();
-                return true;
-            }
-            if (e == Event::Escape) {
-                _quitDialogOpen = false;
-                return true;
-            }
-            if (e == Event::Character('n') || e == Event::Character('N') ||
-                    (e == Event::Return && _quitFocus == 1)) {
-                std::remove(_swapPath.c_str());
-                screen.ExitLoopClosure()();
-                return true;
-            }
-            return true; // consume all other events while dialog is open
+            if (e == Event::Escape)                                              { _quitDialogOpen = false;  return true; }
+            if (e == Event::Character('y') || e == Event::Character('Y'))        { quitDialog.trigger(0);    return true; }
+            if (e == Event::Character('n') || e == Event::Character('N'))        { quitDialog.trigger(1);    return true; }
+            quitDialog.onEvent(e);
+            return true;
         }
 
         // Pane focus switching.
@@ -383,13 +217,34 @@ void App::run() {
             if (!std::filesystem::exists(_swapPath)) {
                 screen.ExitLoopClosure()();
             } else {
-                _quitFocus = 0;
+                quitDialog.focus = 0;
                 _quitDialogOpen = true;
             }
             return true;
         }
         if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing()) {
-            _delFocus = selTask().deps.isEmpty() ? 0 : 1;
+            const ::Task& t = selTask();
+            bool hasDeps = !t.deps.isEmpty();
+            unsigned tid = _ids[selIdx()];
+            if (hasDeps) {
+                delDialog.open(
+                    {"Delete All", "Delete Selected", "Cancel"},
+                    {
+                        [&, tid]{ _store.removeCascade(tid); writeSwap(); rebuildTree(); _delDialogOpen = false; },
+                        [&, tid]{ _store.removeSplice(tid);  writeSwap(); rebuildTree(); _delDialogOpen = false; },
+                        [&]     { _delDialogOpen = false; },
+                    },
+                    1  // default: "Delete Selected" (safer than cascade)
+                );
+            } else {
+                delDialog.open(
+                    {"Delete", "Cancel"},
+                    {
+                        [&, tid]{ _store.removeSplice(tid); writeSwap(); rebuildTree(); _delDialogOpen = false; },
+                        [&]     { _delDialogOpen = false; },
+                    }
+                );
+            }
             _delDialogOpen = true;
             return true;
         }
