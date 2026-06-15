@@ -297,8 +297,12 @@ void App::run() {
                 screen.ExitLoopClosure()();
                 return true;
             }
+            if (e == Event::Escape) {
+                _quitDialogOpen = false;
+                return true;
+            }
             if (e == Event::Character('n') || e == Event::Character('N') ||
-                    e == Event::Escape || (e == Event::Return && _quitFocus == 1)) {
+                    (e == Event::Return && _quitFocus == 1)) {
                 std::remove(_swapPath.c_str());
                 screen.ExitLoopClosure()();
                 return true;
