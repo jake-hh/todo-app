@@ -159,7 +159,12 @@ CycleField::CycleField(std::string label, std::function<std::string()> getValue,
 
 
 bool CycleField::OnEvent(Event e) {
-    if (Focused() && e == Event::Return) {
+    if (Focused() && (e == Event::Return || e == Event::Character(' '))) {
+        _onCycle();
+        return true;
+    }
+    if (e.is_mouse() && e.mouse().motion == Mouse::Pressed
+            && _box.Contain(e.mouse().x, e.mouse().y) && Focused()) {
         _onCycle();
         return true;
     }
