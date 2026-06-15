@@ -17,6 +17,7 @@
  */
 struct Dialog {
     int focus = 0;
+    int mouseX = -1, mouseY = -1;  // last known mouse position for hover tracking
     std::vector<ftxui::Box> boxes;
     std::vector<std::string> labels;
     std::vector<std::function<void()>> actions;

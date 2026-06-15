@@ -16,6 +16,11 @@ void Dialog::open(std::vector<std::string> lbls,
 
 
 Element Dialog::render(Elements body) {
+    // Re-apply hover: if mouse is over a button, override keyboard-driven focus.
+    // Uses previous frame's box positions, so this is always one frame fresh.
+    for (int i = 0; i < (int)boxes.size(); i++)
+        if (boxes[i].Contain(mouseX, mouseY)) { focus = i; break; }
+
     auto btn = [](const std::string& label, bool focused) -> Element {
         auto e = text("  " + label + "  ") | border;
         return focused ? e | inverted : e;
@@ -40,9 +45,10 @@ void Dialog::trigger(int idx) {
 void Dialog::onEvent(Event e) {
     int n = (int)labels.size();
     if (e.is_mouse()) {
-        int x = e.mouse().x, y = e.mouse().y;
+        mouseX = e.mouse().x;
+        mouseY = e.mouse().y;
         for (int i = 0; i < n; i++)
-            if (boxes[i].Contain(x, y)) { focus = i; break; }
+            if (boxes[i].Contain(mouseX, mouseY)) { focus = i; break; }
         if (e.mouse().motion == Mouse::Pressed) trigger(focus);
         return;
     }
