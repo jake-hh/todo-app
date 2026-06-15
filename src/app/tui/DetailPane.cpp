@@ -36,7 +36,7 @@ DetailPane::DetailPane(TaskStore& store,
     // Non-focusable read-only fields.
     auto id_header = Renderer([getTask, row] {
         const Task* t = getTask();
-        if (!t) return text(" (no tasks)");
+        if (!t) return text("");
         return row(" ID: ", std::to_string(t->id));
     });
 

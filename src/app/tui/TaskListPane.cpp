@@ -17,7 +17,10 @@ ftxui::Component MakeTaskListPane(std::vector<std::string>& labels, int& selecte
 
     // Wrap in a Renderer that applies yframe so the selected entry scrolls
     // into view when the pane is shorter than the full list.
-    auto scrollable = Renderer(menu, [menu] {
+    // When the list is empty, render a non-interactive gray placeholder instead.
+    auto scrollable = Renderer(menu, [menu, &labels] {
+        if (labels.empty())
+            return text(" (no tasks)") | color(Color::GrayDark) | flex;
         return menu->Render() | vscroll_indicator | yframe | flex;
     });
 
