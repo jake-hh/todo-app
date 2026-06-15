@@ -147,6 +147,23 @@ void App::run() {
         }) | border | clear_under | center;
     };
 
+    // Builds the quit confirmation dialog element.
+    auto renderQuitDialog = [&]() -> Element {
+        auto btn = [](const std::string& label, bool focused) -> Element {
+            auto e = text("  " + label + "  ") | border;
+            return focused ? e | inverted : e;
+        };
+        return vbox({
+            text(" Save changes before quitting?"),
+            separator(),
+            hbox({
+                btn("Save [Y]",    _quitFocus == 0),
+                text("  "),
+                btn("Discard [n]", _quitFocus == 1),
+            }) | center,
+        }) | border | clear_under | center;
+    };
+
     // Renderer wraps the layout to add the border/title chrome around each pane.
     // Terminal::Size() is queried each frame so the split tracks terminal resizes.
     // When a dialog is open it is layered on top via dbox.
@@ -170,6 +187,7 @@ void App::run() {
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
         if (_recoverDialogOpen) return dbox({main, renderRecoverDialog()});
+        if (_quitDialogOpen)    return dbox({main, renderQuitDialog()});
         if (!_delDialogOpen || _ids.empty()) return main;
         return dbox({main, renderDialog()});
     });
@@ -259,6 +277,35 @@ void App::run() {
             return true; // consume all other events while dialog is open
         }
 
+        if (_quitDialogOpen) {
+            if (e == Event::ArrowLeft || e == Event::Character('h')) {
+                if (_quitFocus > 0) _quitFocus--;
+                return true;
+            }
+            if (e == Event::ArrowRight || e == Event::Character('l')) {
+                if (_quitFocus < 1) _quitFocus++;
+                return true;
+            }
+            if (e == Event::Tab || e == Event::TabReverse) {
+                _quitFocus = 1 - _quitFocus;
+                return true;
+            }
+            if (e == Event::Character('Y') || e == Event::Character('y') ||
+                    (e == Event::Return && _quitFocus == 0)) {
+                FileIO::save(_filePath, _store);
+                std::remove(_swapPath.c_str());
+                screen.ExitLoopClosure()();
+                return true;
+            }
+            if (e == Event::Character('n') || e == Event::Character('N') ||
+                    e == Event::Escape || (e == Event::Return && _quitFocus == 1)) {
+                std::remove(_swapPath.c_str());
+                screen.ExitLoopClosure()();
+                return true;
+            }
+            return true; // consume all other events while dialog is open
+        }
+
         // Pane focus switching.
         // l/Enter from list pane → enter detail pane (title field).
         // Esc/h from detail pane → return to list pane.
@@ -282,9 +329,9 @@ void App::run() {
             detail_pane.takeFocus();
             return true;
         }
-        if (e == Event::Character('q')) {
-            std::remove(_swapPath.c_str());
-            screen.ExitLoopClosure()();
+        if (e == Event::Character('q') && !detail_pane.isEditing()) {
+            _quitFocus = 0;
+            _quitDialogOpen = true;
             return true;
         }
         if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing()) {

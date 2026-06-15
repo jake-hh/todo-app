@@ -23,6 +23,8 @@ private:
     int  _delFocus = 0;                // focused button index within the delete dialog
     bool _recoverDialogOpen = false;   // whether the swap-file recovery prompt is visible
     int  _recoverFocus = 0;            // focused button index within the recovery dialog (0=Recover, 1=Discard)
+    bool _quitDialogOpen = false;      // whether the quit confirmation dialog is visible
+    int  _quitFocus = 0;               // focused button index within the quit dialog (0=Save, 1=Discard)
 
     void buildTreeFrom(unsigned id, int depth);
 
