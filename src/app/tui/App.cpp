@@ -1,62 +1,33 @@
 #include "App.h"
 
+#include <cstdio>
+#include <filesystem>
 #include <set>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/terminal.hpp>
+#include "../data/FileIO.h"
 #include "TaskListPane.h"
 #include "DetailPane.h"
 
 
-App::App() {
-    // Hardcode seed tasks with stub deps to demonstrate the tree view.
-    {
-        unsigned id0 = _store.create("Fix login bug",
-                                     "Users cannot log in when using OAuth",
-                                     3, 0, 1800000000LL);
-
-        unsigned id1 = _store.create("Write unit tests",
-                                     "Cover TaskStore CRUD operations",
-                                     2, 1, -1LL);
-
-        unsigned id2 = _store.create("Update documentation",
-                                     "Align README with new API",
-                                     1, 0, 1802000000LL);
-
-        unsigned id3 = _store.create("Refactor data layer",
-                                     "Extract serialization into FileIO",
-                                     2, 2, -1LL);
-
-        unsigned id4 = _store.create("Deploy to staging",
-                                     "Push latest build to staging environment",
-                                     3, 3, -1LL);
-
-        unsigned id5 = _store.create("Provision server",
-                                     "Spin up staging VM and configure firewall",
-                                     2, 0, -1LL);
-
-        unsigned id6 = _store.create("Set up CI pipeline",
-                                     "Configure GitHub Actions for staging deploys",
-                                     2, 1, -1LL);
-
-        unsigned id7 = _store.create("Obtain SSL certificate",
-                                     "Request cert from CA for staging domain",
-                                     1, 0, -1LL);
-
-        // Stub deps: id0 blocked by id1, id1 blocked by id2,
-        // id3 blocked by both id1 and id4 (demonstrates a duplicate node).
-        // id4 blocked by id5, id5 blocked by id6, id6 blocked by id7
-        _store.get(id0).deps.pushBack(id1);
-        _store.get(id1).deps.pushBack(id2);
-        _store.get(id3).deps.pushBack(id1);
-        _store.get(id3).deps.pushBack(id4);
-        _store.get(id4).deps.pushBack(id5);
-        _store.get(id5).deps.pushBack(id6);
-        _store.get(id6).deps.pushBack(id7);
+App::App(std::string filePath)
+    : _filePath(std::move(filePath))
+    , _swapPath(_filePath + ".swp")
+{
+    if (std::filesystem::exists(_swapPath)) {
+        _recoverDialogOpen = true;
+    } else {
+        try { FileIO::load(_filePath, _store); } catch (...) {}
     }
 
     rebuildTree();
+}
+
+
+void App::writeSwap() {
+    try { FileIO::save(_swapPath, _store); } catch (...) {}
 }
 
 
@@ -108,7 +79,7 @@ void App::run() {
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
     auto list_pane  = MakeTaskListPane(_labels, _selected, _focusedEntry);
-    DetailPane detail_pane(_store, _ids, _selected, [this]{ rebuildTree(); });
+    DetailPane detail_pane(_store, _ids, _selected, [this]{ writeSwap(); rebuildTree(); });
     auto detail_component = detail_pane.component();
 
     // Container::Horizontal routes keyboard focus between the two panes
@@ -158,9 +129,27 @@ void App::run() {
         return vbox(std::move(lines)) | border | clear_under | center;
     };
 
+    // Builds the swap-file recovery dialog element.
+    auto renderRecoverDialog = [&]() -> Element {
+        auto btn = [](const std::string& label, bool focused) -> Element {
+            auto e = text("  " + label + "  ") | border;
+            return focused ? e | inverted : e;
+        };
+        return vbox({
+            text(" Unsaved changes found."),
+            text(" A swap file exists from a previous session."),
+            separator(),
+            hbox({
+                btn("Recover", _recoverFocus == 0),
+                text("  "),
+                btn("Discard", _recoverFocus == 1),
+            }) | center,
+        }) | border | clear_under | center;
+    };
+
     // Renderer wraps the layout to add the border/title chrome around each pane.
     // Terminal::Size() is queried each frame so the split tracks terminal resizes.
-    // When the delete dialog is open it is layered on top via dbox.
+    // When a dialog is open it is layered on top via dbox.
     // Explicit size() avoids ftxui's flex distribution, which allocates space as
     // min_size + extra/2 per pane — causing widths to jump when detail content
     // changes natural width on each selection change.
@@ -180,14 +169,42 @@ void App::run() {
                 detail_component->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
+        if (_recoverDialogOpen) return dbox({main, renderRecoverDialog()});
         if (!_delDialogOpen || _ids.empty()) return main;
         return dbox({main, renderDialog()});
     });
 
-    // Single CatchEvent handles all keyboard input. When the delete dialog is
-    // open it intercepts every event first and consumes them all (returns true),
+    // Single CatchEvent handles all keyboard input. When a dialog is open it
+    // intercepts every event first and consumes them all (returns true),
     // preventing the underlying panes from acting on stray keypresses.
     auto root = CatchEvent(renderer, [&](Event e) {
+        if (_recoverDialogOpen) {
+            if (e == Event::ArrowLeft || e == Event::Character('h')) {
+                if (_recoverFocus > 0) _recoverFocus--;
+                return true;
+            }
+            if (e == Event::ArrowRight || e == Event::Character('l')) {
+                if (_recoverFocus < 1) _recoverFocus++;
+                return true;
+            }
+            if (e == Event::Tab || e == Event::TabReverse) {
+                _recoverFocus = 1 - _recoverFocus;
+                return true;
+            }
+            if (e == Event::Return) {
+                if (_recoverFocus == 0) {
+                    try { FileIO::load(_swapPath, _store); } catch (...) {}
+                } else {
+                    std::remove(_swapPath.c_str());
+                    try { FileIO::load(_filePath, _store); } catch (...) {}
+                }
+                rebuildTree();
+                _recoverDialogOpen = false;
+                return true;
+            }
+            return true; // consume all events while recovery dialog is open
+        }
+
         // Block mouse interactions that bypass TextField's own event handler.
         // Container routes mouse events by position, so clicks/hovers in the
         // list pane never reach the focused TextField in the detail pane.
@@ -221,15 +238,17 @@ void App::run() {
             }
             if (e == Event::Return) {
                 unsigned tid = _ids[selIdx()];
+                bool mutated = false;
                 if (!hasDeps) {
-                    if (_delFocus == 0) _store.removeSplice(tid);
+                    if (_delFocus == 0) { _store.removeSplice(tid); mutated = true; }
                     // _delFocus == 1: Cancel — no action
                 } else {
-                    if (_delFocus == 0)      _store.removeCascade(tid);
-                    else if (_delFocus == 1) _store.removeSplice(tid);
+                    if (_delFocus == 0)      { _store.removeCascade(tid); mutated = true; }
+                    else if (_delFocus == 1) { _store.removeSplice(tid); mutated = true; }
                     // _delFocus == 2: Cancel — no action
                 }
                 _delDialogOpen = false;
+                if (mutated) writeSwap();
                 rebuildTree();
                 return true;
             }
@@ -255,6 +274,7 @@ void App::run() {
 
         if (e == Event::Character('n') && !detail_pane.isEditing()) {
             unsigned newId = _store.create("", "", 2, 0, -1LL);
+            writeSwap();
             rebuildTree();
             for (int i = 0; i < static_cast<int>(_ids.size()); i++) {
                 if (_ids[i] == newId) { _selected = _focusedEntry = i; break; }
@@ -263,6 +283,7 @@ void App::run() {
             return true;
         }
         if (e == Event::Character('q')) {
+            std::remove(_swapPath.c_str());
             screen.ExitLoopClosure()();
             return true;
         }
