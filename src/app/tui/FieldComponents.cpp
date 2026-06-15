@@ -9,6 +9,7 @@ using namespace ftxui;
 bool FieldBase::OnEvent(Event e) {
     if (e.is_mouse() && e.mouse().motion == Mouse::Pressed
             && _box.Contain(e.mouse().x, e.mouse().y) && CaptureMouse(e)) {
+        if (_cancelEdit && *_cancelEdit) (*_cancelEdit)();
         TakeFocus();
         return true;
     }
@@ -20,7 +21,7 @@ void TextField::enterEdit() {
     _editStr = _getEditValue();
     _cursor = static_cast<int>(_editStr.size());
     _editing = true;
-    *_editingFlag = true;
+    if (_cancelEdit) *_cancelEdit = [this] { discardEdit(); };
 }
 
 
@@ -28,7 +29,7 @@ void TextField::confirmEdit() {
     if (_trySetValue(_editStr)) {
         _editing = false;
         _showError = false;
-        *_editingFlag = false;
+        if (_cancelEdit) *_cancelEdit = nullptr;
     } else {
         _showError = true;
     }
@@ -39,7 +40,7 @@ void TextField::discardEdit() {
     _editStr.clear();
     _editing = false;
     _showError = false;
-    *_editingFlag = false;
+    if (_cancelEdit) *_cancelEdit = nullptr;
 }
 
 
@@ -47,15 +48,16 @@ TextField::TextField(std::string label,
                      std::function<std::string()> getValue,
                      std::function<bool(const std::string&)> trySetValue,
                      std::string errorMsg,
-                     std::shared_ptr<bool> editingFlag,
+                     std::shared_ptr<std::function<void()>> cancelEdit,
                      std::function<std::string()> getEditValue)
     : _label(std::move(label))
     , _getValue(std::move(getValue))
     , _trySetValue(std::move(trySetValue))
     , _errorMsg(std::move(errorMsg))
-    , _editingFlag(std::move(editingFlag))
     , _getEditValue(getEditValue ? std::move(getEditValue) : _getValue)
-{}
+{
+    _cancelEdit = std::move(cancelEdit);
+}
 
 
 bool TextField::OnEvent(Event e) {
@@ -140,8 +142,12 @@ Element TextField::OnRender() {
 }
 
 
-CycleField::CycleField(std::string label, std::function<std::string()> getValue)
-    : _label(std::move(label)), _getValue(std::move(getValue)) {}
+CycleField::CycleField(std::string label, std::function<std::string()> getValue,
+                       std::shared_ptr<std::function<void()>> cancelEdit)
+    : _label(std::move(label)), _getValue(std::move(getValue))
+{
+    _cancelEdit = std::move(cancelEdit);
+}
 
 
 Element CycleField::OnRender() {

@@ -19,7 +19,7 @@ private:
     TaskStore& _store;
     const std::vector<unsigned>& _ids;
     int& _selected;
-    std::shared_ptr<bool> _editingFlag;
+    std::shared_ptr<std::function<void()>> _cancelEdit;
     ftxui::Component _component;
     ftxui::Component _titleField; // kept for takeFocus()
 
@@ -38,5 +38,5 @@ public:
     void takeFocus() { _titleField->TakeFocus(); }
 
     /** @brief Returns true while a text field is being edited. */
-    bool isEditing() const { return *_editingFlag; }
+    bool isEditing() const { return _cancelEdit && bool(*_cancelEdit); }
 };

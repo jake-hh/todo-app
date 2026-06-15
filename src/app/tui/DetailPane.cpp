@@ -16,11 +16,11 @@ DetailPane::DetailPane(TaskStore& store,
                        int& selected,
                        std::function<void()> onMutation)
     : _store(store), _ids(ids), _selected(selected)
-    , _editingFlag(std::make_shared<bool>(false))
+    , _cancelEdit(std::make_shared<std::function<void()>>())
 {
     using namespace ftxui;
 
-    auto ef = _editingFlag;
+    auto ef = _cancelEdit;
 
     // Safe task lookup — returns nullptr when the list is empty.
     auto getTask = [&store = _store, &ids = _ids, &sel = _selected]() -> const Task* {
@@ -109,10 +109,10 @@ DetailPane::DetailPane(TaskStore& store,
                           setTitle, "Title cannot be empty", ef);
 
     auto status_f   = Make<CycleField>(" Status: ",
-                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; });
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->statusStr()  : ""; }, ef);
 
     auto priority_f = Make<CycleField>(" Priority: ",
-                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; });
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->priorityStr(): ""; }, ef);
 
     auto duedate_f  = Make<TextField>(" Due: ",
                           [getTask]() -> std::string { const Task* t = getTask(); return t ? t->dueDateStr() : ""; },
@@ -137,7 +137,7 @@ DetailPane::DetailPane(TaskStore& store,
     // Remap j/k to arrow keys only when not in edit mode.
     // In edit mode, j/k must pass through as characters to the active TextField.
     _component = CatchEvent(container, [container, ef](Event e) {
-        if (*ef) return false;
+        if (*ef) return false;  // *ef is std::function — truthy when an edit is active
         if (e == Event::Character('j')) return container->OnEvent(Event::ArrowDown);
         if (e == Event::Character('k')) return container->OnEvent(Event::ArrowUp);
         return false;
