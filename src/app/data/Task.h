@@ -9,6 +9,9 @@
  * @brief Represents a single task in the todo manager.
  */
 struct Task {
+    static constexpr int PRIORITY_COUNT = 4; ///< wishlist, low, medium, high
+    static constexpr int STATUS_COUNT   = 4; ///< open, in-progress, done, wontfix
+
     unsigned id;          ///< Unique auto-assigned ID
     std::string title;
     std::string description;

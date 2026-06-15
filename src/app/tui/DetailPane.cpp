@@ -112,7 +112,7 @@ DetailPane::DetailPane(TaskStore& store,
         if (ids.empty()) return;
         int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
         Task updated = store.get(ids[i]);
-        updated.status = (updated.status + 1) % 4;
+        updated.status = (updated.status + 1) % Task::STATUS_COUNT;
         store.update(updated.id, updated);
         onMutation();
     };
@@ -121,7 +121,7 @@ DetailPane::DetailPane(TaskStore& store,
         if (ids.empty()) return;
         int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
         Task updated = store.get(ids[i]);
-        updated.priority = (updated.priority + 1) % 4;
+        updated.priority = (updated.priority + 1) % Task::PRIORITY_COUNT;
         store.update(updated.id, updated);
         onMutation();
     };
