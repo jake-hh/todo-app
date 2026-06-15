@@ -11,6 +11,7 @@
 #include "TaskListPane.h"
 #include "DetailPane.h"
 #include "Dialog.h"
+#include "DepSelector.h"
 
 
 App::App(std::string filePath)
@@ -77,10 +78,21 @@ void App::run() {
 
     auto screen = ScreenInteractive::Fullscreen();
 
+    auto selIdx = [&]() {
+        return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1));
+    };
+
+    DepSelector depSelector(_store, [this]{ writeSwap(); rebuildTree(); });
+
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
     auto list_pane  = MakeTaskListPane(_labels, _selected, _focusedEntry);
-    DetailPane detail_pane(_store, _ids, _selected, [this]{ writeSwap(); rebuildTree(); });
+    DetailPane detail_pane(_store, _ids, _selected,
+        [this]{ writeSwap(); rebuildTree(); },
+        [&]{
+            if (!_ids.empty())
+                depSelector.openFor(_ids[selIdx()]);
+        });
     auto detail_component = detail_pane.component();
 
     // Container::Horizontal routes keyboard focus between the two panes
@@ -90,9 +102,7 @@ void App::run() {
     Box detail_box;
     Dialog delDialog, recoverDialog, quitDialog;
 
-    // Helpers shared by the renderer and event handler to avoid duplicating
-    // the clamped-selection and store-lookup logic.
-    auto selIdx  = [&]() { return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1)); };
+    // Helper shared by the renderer and event handler.
     auto selTask = [&]() -> const ::Task& { return _store.get(_ids[selIdx()]); };
 
     recoverDialog.open(
@@ -147,6 +157,8 @@ void App::run() {
                 text(" Save changes before quitting?"),
             })});
         }
+        if (depSelector.isOpen())
+            return dbox({main, depSelector.render()});
         if (!_delDialogOpen || _ids.empty()) return main;
         const ::Task& t = selTask();
         Elements body;
@@ -165,6 +177,9 @@ void App::run() {
             recoverDialog.onEvent(e);
             return true;
         }
+
+        if (depSelector.isOpen())
+            return depSelector.onEvent(e);
 
         // Block mouse interactions that bypass TextField's own event handler.
         // Container routes mouse events by position, so clicks/hovers in the

@@ -83,4 +83,25 @@ public:
      * Call after loading tasks from disk.
      */
     void recalcNextId();
+
+    /**
+     * @brief Returns true if adding @p depId as a dependency of @p taskId would
+     *        create a cycle in the dependency graph.
+     */
+    bool wouldCycle(unsigned taskId, unsigned depId) const;
+
+    /**
+     * @brief Adds @p depId as a dependency of @p taskId.
+     * @throws std::out_of_range if either ID does not exist.
+     * @throws std::invalid_argument if the dep would create a cycle.
+     * No-op if the dependency already exists.
+     */
+    void addDep(unsigned taskId, unsigned depId);
+
+    /**
+     * @brief Removes @p depId from the dependency list of @p taskId.
+     * @throws std::out_of_range if @p taskId does not exist.
+     * No-op if @p depId is not in the dependency list.
+     */
+    void removeDep(unsigned taskId, unsigned depId);
 };

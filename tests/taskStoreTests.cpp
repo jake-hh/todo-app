@@ -239,3 +239,98 @@ TEST(TaskStoreTest, RecalcNextIdOnEmptyStore) {
     unsigned next = makeTask(store);
     EXPECT_EQ(next, 0u);
 }
+
+
+// ── wouldCycle ────────────────────────────────────────────────────────────────
+
+TEST(TaskStoreTest, WouldCycle_NoCycle) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    EXPECT_FALSE(store.wouldCycle(a, b));
+}
+
+TEST(TaskStoreTest, WouldCycle_DirectCycle_Detected) {
+    // A → B; adding B → A would cycle
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    store.addDep(a, b);
+    EXPECT_TRUE(store.wouldCycle(b, a));
+}
+
+TEST(TaskStoreTest, WouldCycle_TransitiveCycle_Detected) {
+    // A → B → C; adding C → A would cycle
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    unsigned c = makeTask(store, "C");
+    store.addDep(a, b);
+    store.addDep(b, c);
+    EXPECT_TRUE(store.wouldCycle(c, a));
+}
+
+TEST(TaskStoreTest, WouldCycle_SelfLoop_Detected) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    EXPECT_TRUE(store.wouldCycle(a, a));
+}
+
+
+// ── addDep ────────────────────────────────────────────────────────────────────
+
+TEST(TaskStoreTest, AddDep_ValidDep_UpdatesTask) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    store.addDep(a, b);
+    EXPECT_EQ(store.get(a).deps.size(), 1u);
+    EXPECT_EQ(store.get(a).deps[0], b);
+}
+
+TEST(TaskStoreTest, AddDep_DirectCycle_Throws) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    store.addDep(a, b);
+    EXPECT_THROW(store.addDep(b, a), std::invalid_argument);
+}
+
+TEST(TaskStoreTest, AddDep_TransitiveCycle_Throws) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    unsigned c = makeTask(store, "C");
+    store.addDep(a, b);
+    store.addDep(b, c);
+    EXPECT_THROW(store.addDep(c, a), std::invalid_argument);
+}
+
+TEST(TaskStoreTest, AddDep_Duplicate_Ignored) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    store.addDep(a, b);
+    store.addDep(a, b); // duplicate
+    EXPECT_EQ(store.get(a).deps.size(), 1u);
+}
+
+
+// ── removeDep ─────────────────────────────────────────────────────────────────
+
+TEST(TaskStoreTest, RemoveDep_RemovesFromDeps) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    store.addDep(a, b);
+    store.removeDep(a, b);
+    EXPECT_EQ(store.get(a).deps.size(), 0u);
+}
+
+TEST(TaskStoreTest, RemoveDep_NonexistentDep_NoOp) {
+    TaskStore store;
+    unsigned a = makeTask(store, "A");
+    unsigned b = makeTask(store, "B");
+    store.removeDep(a, b); // b was never a dep — should not throw
+    EXPECT_EQ(store.get(a).deps.size(), 0u);
+}

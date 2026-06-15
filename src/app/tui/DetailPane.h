@@ -25,11 +25,14 @@ private:
 
 public:
     /**
-     * @param onMutation Called after any successful field save so the caller
-     *                   can rebuild derived state (e.g. list pane labels).
+     * @param onMutation    Called after any successful field save so the caller
+     *                      can rebuild derived state (e.g. list pane labels).
+     * @param onManageDeps  Called when the user activates the Deps field to open
+     *                      the dependency selector overlay.
      */
     DetailPane(TaskStore& store, const std::vector<unsigned>& ids, int& selected,
-               std::function<void()> onMutation);
+               std::function<void()> onMutation,
+               std::function<void()> onManageDeps);
 
     /**
      * @brief Returns the ftxui component to place in the layout.

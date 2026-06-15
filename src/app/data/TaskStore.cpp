@@ -128,3 +128,48 @@ void TaskStore::recalcNextId() {
     else
         _nextId = _tasks.rbegin()->first + 1;
 }
+
+
+bool TaskStore::wouldCycle(unsigned taskId, unsigned depId) const {
+    // Cycle exists if taskId is reachable from depId via existing deps.
+    std::set<unsigned> visited;
+    std::stack<unsigned> stk;
+    stk.push(depId);
+    while (!stk.empty()) {
+        unsigned cur = stk.top(); stk.pop();
+        if (cur == taskId) return true;
+        if (!visited.insert(cur).second) continue;
+        auto it = _tasks.find(cur);
+        if (it != _tasks.end())
+            for (size_t i = 0; i < it->second.deps.size(); i++)
+                stk.push(it->second.deps[i]);
+    }
+    return false;
+}
+
+
+void TaskStore::addDep(unsigned taskId, unsigned depId) {
+    if (_tasks.find(taskId) == _tasks.end())
+        throw std::out_of_range("Task not found");
+    if (_tasks.find(depId) == _tasks.end())
+        throw std::out_of_range("Dependency not found");
+    if (wouldCycle(taskId, depId))
+        throw std::invalid_argument("Dependency would create a cycle");
+    Task& t = _tasks[taskId];
+    for (size_t i = 0; i < t.deps.size(); i++)
+        if (t.deps[i] == depId) return; // already present
+    t.deps.pushBack(depId);
+}
+
+
+void TaskStore::removeDep(unsigned taskId, unsigned depId) {
+    auto it = _tasks.find(taskId);
+    if (it == _tasks.end())
+        throw std::out_of_range("Task not found");
+    Task& t = it->second;
+    SmartArray<unsigned> kept;
+    for (size_t i = 0; i < t.deps.size(); i++)
+        if (t.deps[i] != depId)
+            kept.pushBack(t.deps[i]);
+    t.deps = std::move(kept);
+}

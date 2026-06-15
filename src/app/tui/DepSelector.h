@@ -1,0 +1,48 @@
+#pragma once
+
+#include <functional>
+#include <vector>
+#include <ftxui/component/event.hpp>
+#include <ftxui/dom/elements.hpp>
+#include "../data/TaskStore.h"
+
+
+/**
+ * @brief Modal overlay for adding and removing task dependencies.
+ *
+ * Shows all tasks except the current one. Checked rows are existing deps.
+ * Rows that would create a cycle are dimmed and non-interactive.
+ * j/k or arrows navigate; Space/Enter toggles; Esc closes.
+ *
+ * Usage: call openFor() to show, isOpen() to query, render()/onEvent()
+ * each frame (same pattern as Dialog). All events are consumed while open.
+ */
+class DepSelector {
+    TaskStore& _store;
+    std::function<void()> _onMutation;
+    bool _open = false;
+    unsigned _taskId = 0;
+    int _cursor = 0;
+    int _offset = 0;
+    std::vector<unsigned> _candidates; // task IDs shown in list, in store order
+
+    void buildCandidates();
+    void toggle();
+    void clampScroll();
+
+public:
+    static constexpr int MAX_VISIBLE = 8;
+
+    DepSelector(TaskStore& store, std::function<void()> onMutation);
+
+    /** @brief Opens the selector for the given task. */
+    void openFor(unsigned taskId);
+
+    bool isOpen() const { return _open; }
+    void close() { _open = false; }
+
+    ftxui::Element render();
+
+    /** @brief Handles keyboard/mouse events. Always returns true (consumes all). */
+    bool onEvent(ftxui::Event e);
+};

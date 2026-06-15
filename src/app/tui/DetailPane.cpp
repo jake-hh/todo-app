@@ -14,7 +14,8 @@
 DetailPane::DetailPane(TaskStore& store,
                        const std::vector<unsigned>& ids,
                        int& selected,
-                       std::function<void()> onMutation)
+                       std::function<void()> onMutation,
+                       std::function<void()> onManageDeps)
     : _store(store), _ids(ids), _selected(selected)
     , _cancelEdit(std::make_shared<std::function<void()>>())
 {
@@ -40,25 +41,25 @@ DetailPane::DetailPane(TaskStore& store,
         return row(" ID: ", std::to_string(t->id));
     });
 
-    auto footer = Renderer([getTask, row] {
+    auto created_f = Renderer([getTask, row] {
         const Task* t = getTask();
         if (!t) return text("");
-
-        std::string deps;
-        if (t->deps.isEmpty()) {
-            deps = "none";
-        } else {
-            for (size_t i = 0; i < t->deps.size(); i++) {
-                if (i > 0) deps += ", ";
-                deps += std::to_string(t->deps[i]);
-            }
-        }
-
-        return vbox({
-            row(" Created: ", t->createdAtStr()),
-            row(" Deps: ",    deps),
-        });
+        return row(" Created: ", t->createdAtStr());
     });
+
+    auto getDepsStr = [getTask]() -> std::string {
+        const Task* t = getTask();
+        if (!t) return "";
+        if (t->deps.isEmpty()) return "none";
+        std::string s;
+        for (size_t i = 0; i < t->deps.size(); i++) {
+            if (i > 0) s += ", ";
+            s += "#" + std::to_string(t->deps[i]);
+        }
+        return s;
+    };
+
+    auto deps_f = Make<CycleField>(" Deps: ", getDepsStr, onManageDeps, ef);
 
     // Setter helpers — capture refs and onMutation by value.
     auto setTitle = [&store = _store, &ids = _ids, &sel = _selected, onMutation]
@@ -174,7 +175,8 @@ DetailPane::DetailPane(TaskStore& store,
         priority_f,
         duedate_f,
         desc_f,
-        footer,
+        created_f,
+        deps_f,
     });
 
     // Remap j/k to arrow keys only when not in edit mode.
