@@ -330,8 +330,12 @@ void App::run() {
             return true;
         }
         if (e == Event::Character('q') && !detail_pane.isEditing()) {
-            _quitFocus = 0;
-            _quitDialogOpen = true;
+            if (!std::filesystem::exists(_swapPath)) {
+                screen.ExitLoopClosure()();
+            } else {
+                _quitFocus = 0;
+                _quitDialogOpen = true;
+            }
             return true;
         }
         if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing()) {
