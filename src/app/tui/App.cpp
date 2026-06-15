@@ -115,6 +115,8 @@ void App::run() {
     // and handles focus cycling.
     auto layout = Container::Horizontal({list_pane, detail_component});
 
+    Box detail_box;
+
     // Helpers shared by the renderer and event handler to avoid duplicating
     // the clamped-selection and store-lookup logic.
     auto selIdx  = [&]() { return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1)); };
@@ -176,7 +178,7 @@ void App::run() {
                 text(" Details") | bold,
                 separator(),
                 detail_component->Render() | flex,
-            }) | border | size(WIDTH, EQUAL, right_w),
+            }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
         if (!_delDialogOpen || _ids.empty()) return main;
         return dbox({main, renderDialog()});
@@ -192,8 +194,8 @@ void App::run() {
         if (detail_pane.isEditing() && e.is_mouse()) {
             if (e.mouse().motion == Mouse::Moved)
                 return true;  // Bug 1: consume hover so Menu can't TakeFocus
-            if (e.mouse().motion == Mouse::Pressed)
-                detail_pane.cancelEdit();  // Bug 2: discard edit before click propagates
+            if (e.mouse().motion == Mouse::Pressed && !detail_box.Contain(e.mouse().x, e.mouse().y))
+                detail_pane.cancelEdit();  // Bug 2: cancel only for clicks outside detail pane
         }
 
         if (_delDialogOpen && !_ids.empty()) {
