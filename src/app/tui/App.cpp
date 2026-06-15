@@ -90,6 +90,9 @@ void App::run() {
     int _delFocus = 0;
     int _recoverFocus = 0;
     int _quitFocus = 0;
+    Box delBoxes[3];    // bounding boxes for delete dialog buttons (max 3)
+    Box recoverBoxes[2];
+    Box quitBoxes[2];
 
     // Helpers shared by the renderer and event handler to avoid duplicating
     // the clamped-selection and store-lookup logic.
@@ -109,15 +112,15 @@ void App::run() {
 
         Elements buttons;
         if (hasDeps) {
-            buttons.push_back(btn("Delete All",      _delFocus == 0));
+            buttons.push_back(btn("Delete All",      _delFocus == 0) | reflect(delBoxes[0]));
             buttons.push_back(text("  "));
-            buttons.push_back(btn("Delete Selected", _delFocus == 1));
+            buttons.push_back(btn("Delete Selected", _delFocus == 1) | reflect(delBoxes[1]));
             buttons.push_back(text("  "));
-            buttons.push_back(btn("Cancel",          _delFocus == 2));
+            buttons.push_back(btn("Cancel",          _delFocus == 2) | reflect(delBoxes[2]));
         } else {
-            buttons.push_back(btn("Delete", _delFocus == 0));
+            buttons.push_back(btn("Delete", _delFocus == 0) | reflect(delBoxes[0]));
             buttons.push_back(text("  "));
-            buttons.push_back(btn("Cancel", _delFocus == 1));
+            buttons.push_back(btn("Cancel", _delFocus == 1) | reflect(delBoxes[1]));
         }
 
         Elements lines;
@@ -140,9 +143,9 @@ void App::run() {
             text(" A swap file exists from a previous session."),
             separator(),
             hbox({
-                btn("Recover", _recoverFocus == 0),
+                btn("Recover", _recoverFocus == 0) | reflect(recoverBoxes[0]),
                 text("  "),
-                btn("Discard", _recoverFocus == 1),
+                btn("Discard", _recoverFocus == 1) | reflect(recoverBoxes[1]),
             }) | center,
         }) | border | clear_under | center;
     };
@@ -153,9 +156,9 @@ void App::run() {
             text(" Save changes before quitting?"),
             separator(),
             hbox({
-                btn("Save [Y]",    _quitFocus == 0),
+                btn("Save [Y]",    _quitFocus == 0) | reflect(quitBoxes[0]),
                 text("  "),
-                btn("Discard [n]", _quitFocus == 1),
+                btn("Discard [n]", _quitFocus == 1) | reflect(quitBoxes[1]),
             }) | center,
         }) | border | clear_under | center;
     };
@@ -193,6 +196,21 @@ void App::run() {
     // preventing the underlying panes from acting on stray keypresses.
     auto root = CatchEvent(renderer, [&](Event e) {
         if (_recoverDialogOpen) {
+            if (e.is_mouse()) {
+                int x = e.mouse().x, y = e.mouse().y;
+                for (int i = 0; i < 2; i++)
+                    if (recoverBoxes[i].Contain(x, y)) { _recoverFocus = i; break; }
+                if (e.mouse().motion != Mouse::Pressed) return true;
+                if (_recoverFocus == 0) {
+                    try { FileIO::load(_swapPath, _store); } catch (...) {}
+                } else {
+                    std::remove(_swapPath.c_str());
+                    try { FileIO::load(_filePath, _store); } catch (...) {}
+                }
+                rebuildTree();
+                _recoverDialogOpen = false;
+                return true;
+            }
             if (e == Event::ArrowLeft || e == Event::Character('h')) {
                 if (_recoverFocus > 0) _recoverFocus--;
                 return true;
@@ -234,6 +252,24 @@ void App::run() {
             bool hasDeps = !t.deps.isEmpty();
             int numBtns = hasDeps ? 3 : 2;
 
+            if (e.is_mouse()) {
+                int x = e.mouse().x, y = e.mouse().y;
+                for (int i = 0; i < numBtns; i++)
+                    if (delBoxes[i].Contain(x, y)) { _delFocus = i; break; }
+                if (e.mouse().motion != Mouse::Pressed) return true;
+                unsigned tid = _ids[selIdx()];
+                bool mutated = false;
+                if (!hasDeps) {
+                    if (_delFocus == 0) { _store.removeSplice(tid); mutated = true; }
+                } else {
+                    if (_delFocus == 0)      { _store.removeCascade(tid); mutated = true; }
+                    else if (_delFocus == 1) { _store.removeSplice(tid); mutated = true; }
+                }
+                _delDialogOpen = false;
+                if (mutated) writeSwap();
+                rebuildTree();
+                return true;
+            }
             if (e == Event::ArrowLeft || e == Event::Character('h')) {
                 if (_delFocus > 0) _delFocus--;
                 return true;
@@ -274,6 +310,20 @@ void App::run() {
         }
 
         if (_quitDialogOpen) {
+            if (e.is_mouse()) {
+                int x = e.mouse().x, y = e.mouse().y;
+                for (int i = 0; i < 2; i++)
+                    if (quitBoxes[i].Contain(x, y)) { _quitFocus = i; break; }
+                if (e.mouse().motion != Mouse::Pressed) return true;
+                if (_quitFocus == 0) {
+                    FileIO::save(_filePath, _store);
+                    std::remove(_swapPath.c_str());
+                } else {
+                    std::remove(_swapPath.c_str());
+                }
+                screen.ExitLoopClosure()();
+                return true;
+            }
             if (e == Event::ArrowLeft || e == Event::Character('h')) {
                 if (_quitFocus > 0) _quitFocus--;
                 return true;
