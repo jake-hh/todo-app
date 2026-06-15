@@ -193,7 +193,7 @@ void App::run() {
         // Pane focus switching.
         // l/Enter from list pane → enter detail pane (title field).
         // Esc/h from detail pane → return to list pane.
-        if ((e == Event::Character('l') || e == Event::Return) && list_pane->Focused()) {
+        if ((e == Event::Character('l') || e == Event::Return || e == Event::ArrowRight) && list_pane->Focused()) {
             detail_pane.takeFocus();
             return true;
         }
