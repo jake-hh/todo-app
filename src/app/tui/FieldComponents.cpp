@@ -137,7 +137,7 @@ Element TextField::OnRender() {
             hbox({text(before), text(at) | inverted, text(after)}) | bgcolor(Color::GrayDark) | xflex,
         });
         if (_showError && !_errorMsg.empty())
-            return vbox({editRow, text(_errorMsg) | color(Color::Red)}) | reflect(_box);
+            return vbox({editRow, text(" " + _errorMsg) | color(Color::Red)}) | reflect(_box);
         return editRow | reflect(_box);
     }
 
@@ -173,7 +173,7 @@ Element CycleField::OnRender() {
 
     std::string warning = _getWarning ? _getWarning() : "";
     if (!warning.empty())
-        return vbox({row, text(warning) | color(Color::Orange1)}) | reflect(_box);
+        return vbox({row, text(" " + warning) | color(Color::Orange1)}) | reflect(_box);
 
     return row | reflect(_box);
 }
