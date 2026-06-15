@@ -105,8 +105,13 @@ DetailPane::DetailPane(TaskStore& store,
     };
 
     auto title_f    = Make<TextField>(" Title: ",
-                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->title        : ""; },
-                          setTitle, "Title cannot be empty", ef);
+                          [getTask]() -> std::string {
+                              const Task* t = getTask();
+                              if (!t) return "";
+                              return t->title.empty() ? "New task" : t->title;
+                          },
+                          setTitle, "Title cannot be empty", ef,
+                          [getTask]() -> std::string { const Task* t = getTask(); return t ? t->title : ""; });
 
     auto cycleStatus = [&store = _store, &ids = _ids, &sel = _selected, onMutation]() {
         if (ids.empty()) return;

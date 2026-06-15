@@ -91,7 +91,7 @@ void App::buildTreeFrom(unsigned id, int depth) {
         prefix = std::string(3 * (depth-1) + 0, ' ') + "└─ ";
 
     _ids.push_back(id);
-    _labels.push_back(prefix + t.statusSymbol() + " " + t.title);
+    _labels.push_back(prefix + t.statusSymbol() + " " + (t.title.empty() ? "New task" : t.title));
 
     // DFS on each tasks deps (blockers).
     // Duplicate tasks appear under each parent — no visited guard needed.
@@ -253,6 +253,15 @@ void App::run() {
             return true;
         }
 
+        if (e == Event::Character('n') && !detail_pane.isEditing()) {
+            unsigned newId = _store.create("", "", 2, 0, -1LL);
+            rebuildTree();
+            for (int i = 0; i < static_cast<int>(_ids.size()); i++) {
+                if (_ids[i] == newId) { _selected = i; break; }
+            }
+            detail_pane.takeFocus();
+            return true;
+        }
         if (e == Event::Character('q')) {
             screen.ExitLoopClosure()();
             return true;
