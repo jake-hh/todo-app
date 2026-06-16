@@ -30,6 +30,7 @@ DetailPane::DetailPane(TaskStore& store,
         return &store.get(ids[i]);
     };
 
+    // Renders a bold label next to a plain value string.
     auto row = [](const std::string& label, const std::string& val) -> Element {
         return hbox({text(label) | bold, text(val)});
     };
@@ -47,6 +48,7 @@ DetailPane::DetailPane(TaskStore& store,
         return row(" Created: ", t->createdAtStr());
     });
 
+    // Returns a comma-separated list of dep IDs, or "none" if the task has no deps.
     auto getDepsStr = [getTask]() -> std::string {
         const Task* t = getTask();
         if (!t) return "";
@@ -114,6 +116,7 @@ DetailPane::DetailPane(TaskStore& store,
                           setTitle, "Title cannot be empty", ef,
                           [getTask]() -> std::string { const Task* t = getTask(); return t ? t->title : ""; });
 
+    // Advances status by one step (wraps at STATUS_COUNT) and saves immediately.
     auto cycleStatus = [&store = _store, &ids = _ids, &sel = _selected, onMutation]() {
         if (ids.empty()) return;
         int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));
@@ -123,6 +126,7 @@ DetailPane::DetailPane(TaskStore& store,
         onMutation();
     };
 
+    // Advances priority by one step (wraps at PRIORITY_COUNT) and saves immediately.
     auto cyclePriority = [&store = _store, &ids = _ids, &sel = _selected, onMutation]() {
         if (ids.empty()) return;
         int i = std::max(0, std::min(sel, static_cast<int>(ids.size()) - 1));

@@ -24,6 +24,9 @@ bool FieldBase::OnEvent(Event e) {
 }
 
 
+// Populates the edit buffer from _getEditValue, places cursor at end, and
+// registers discardEdit in the shared cancelEdit hook so other fields can
+// cancel this edit without knowing which TextField is active.
 void TextField::enterEdit() {
     _editStr = _getEditValue();
     _cursor = static_cast<int>(_editStr.size());
@@ -32,6 +35,8 @@ void TextField::enterEdit() {
 }
 
 
+// Calls trySetValue; on success exits edit mode and clears the cancel hook.
+// On failure sets _showError so the next render shows the error message.
 void TextField::confirmEdit() {
     if (_trySetValue(_editStr)) {
         _editing = false;
@@ -43,6 +48,7 @@ void TextField::confirmEdit() {
 }
 
 
+// Exits edit mode and clears the cancel hook without saving.
 void TextField::discardEdit() {
     _editing = false;
     _showError = false;

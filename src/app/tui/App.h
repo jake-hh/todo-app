@@ -31,6 +31,7 @@ private:
     bool _unblockedFilter = false; // false=all, true=unblocked only
     std::string _saveError;         // non-empty if save failed; printed to stderr after screen exits
 
+    /** @brief Recursively appends @p id and its deps to _ids/_labels at @p depth. */
     void buildTreeFromTask(unsigned id, int depth);
 
     /** @brief Clears and rebuilds _ids/_labels from the current store state; clamps _selected. */
@@ -40,6 +41,10 @@ private:
     void writeSwap();
 
 public:
+    /**
+     * @brief Constructs App and loads tasks from disk.
+     * @param filePath Path to the binary task file (created on first save).
+     */
     explicit App(std::string filePath);
 
     /** @brief Start the event loop. Blocks until the user quits. */

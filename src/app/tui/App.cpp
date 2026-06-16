@@ -91,6 +91,7 @@ void App::run() {
 
     auto screen = ScreenInteractive::Fullscreen();
 
+    // Clamps _selected to a valid index; safe to call when _ids is empty.
     auto selIdx = [&]() {
         return std::max(0, std::min(_selected, static_cast<int>(_ids.size()) - 1));
     };
