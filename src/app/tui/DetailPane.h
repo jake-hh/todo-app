@@ -21,7 +21,7 @@ private:
     int& _selected;
     std::shared_ptr<std::function<void()>> _cancelEdit;
     ftxui::Component _component;
-    ftxui::Component _titleField; // kept for takeFocus()
+    ftxui::Component _titleField; ///< Kept for takeFocus().
 
 public:
     /**

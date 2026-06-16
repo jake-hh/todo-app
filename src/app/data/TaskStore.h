@@ -14,8 +14,8 @@
  */
 class TaskStore {
 private:
-    std::map<unsigned, Task> _tasks; // primary store; iterates in ID order
-    unsigned _nextId = 0;            // next ID to assign; not persisted, re-derived on load
+    std::map<unsigned, Task> _tasks; ///< Primary store; iterates in ID order.
+    unsigned _nextId = 0;            ///< Next ID to assign; not persisted, re-derived on load.
 
 public:
     /**
