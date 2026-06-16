@@ -1,6 +1,7 @@
 #include "App.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <set>
 #include <ftxui/component/component.hpp>
@@ -142,7 +143,13 @@ void App::run() {
     quitDialog.open(
         {"Save [Y]", "Discard [n]"},
         {
-            [&]{ FileIO::save(_filePath, _store); std::remove(_swapPath.c_str()); screen.ExitLoopClosure()(); },
+            [&]{ try {
+                     FileIO::save(_filePath, _store);
+                     std::remove(_swapPath.c_str());
+                 } catch (const std::exception& e) {
+                     _saveError = e.what();
+                 }
+                 screen.ExitLoopClosure()(); },
             [&]{ std::remove(_swapPath.c_str()); screen.ExitLoopClosure()(); },
         }
     );
@@ -311,4 +318,9 @@ void App::run() {
     });
 
     screen.Loop(root);
+
+    if (!_saveError.empty()) {
+        std::fprintf(stderr, "error: could not save '%s': %s\n", _filePath.c_str(), _saveError.c_str());
+        std::exit(1);
+    }
 }

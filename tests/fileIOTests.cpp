@@ -140,6 +140,13 @@ TEST_F(FileIOTest, RemoveDeletesFile) {
     EXPECT_FALSE(std::filesystem::exists(kTestFile));
 }
 
+TEST_F(FileIOTest, SaveThrowsOnUnwritablePath) {
+    TaskStore s;
+    s.create("t", "", 0, 0, -1);
+    EXPECT_THROW(FileIO::save("/no/such/dir/tasks.bin", s), std::runtime_error);
+}
+
+
 TEST_F(FileIOTest, SwapLifecycle) {
     // Simulate: mutation → swap written; quit → swap removed, main untouched.
     TaskStore s;

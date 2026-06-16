@@ -29,6 +29,7 @@ private:
     int  _priorityFilter  = -1;    // -1=all, 0-3=specific priority
     int  _statusFilter    = -1;    // -1=all, 0-3=specific status
     bool _unblockedFilter = false; // false=all, true=unblocked only
+    std::string _saveError;         // non-empty if save failed; printed to stderr after screen exits
 
     void buildTreeFromTask(unsigned id, int depth);
 
