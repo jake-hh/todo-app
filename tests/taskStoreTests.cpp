@@ -475,15 +475,34 @@ TEST(TaskStoreTest, Search_DateFilter_DueToday_ReturnsTodayTasks) {
 
 TEST(TaskStoreTest, Search_DateFilter_DueThisWeek_ReturnsTasksDueWithinWeek) {
     TaskStore store;
+    int64_t today     = startOfToday() + 12 * 3600; // noon today
+    int64_t tomorrow  = startOfToday() + 86400;
     int64_t in3Days   = startOfToday() + 3 * 86400;
     int64_t in8Days   = startOfToday() + 8 * 86400;
     int64_t yesterday = startOfToday() - 86400;
-    store.create("in 3 days", "", 0, 0, in3Days);
-    store.create("in 8 days", "", 0, 0, in8Days);
-    store.create("yesterday", "", 0, 0, yesterday);
-    store.create("no date",   "", 0, 0, -1);
-    // dateFilter=3: due this week means >= today and < today+7d
-    // in3Days qualifies; in8Days doesn't; yesterday is overdue not this-week
+    store.create("today",     "", 0, 0, today);     // excluded: today belongs to "due today"
+    store.create("tomorrow",  "", 0, 0, tomorrow);  // included: first day of "this week"
+    store.create("in 3 days", "", 0, 0, in3Days);  // included
+    store.create("in 8 days", "", 0, 0, in8Days);  // excluded: outside 7-day window
+    store.create("yesterday", "", 0, 0, yesterday); // excluded: overdue
+    store.create("no date",   "", 0, 0, -1);        // excluded: no due date
+    // dateFilter=3: due this week means [tomorrow, today+7d)
+    auto r = store.search("", 3, -1, -1);
+    EXPECT_EQ(r.size(), 2u);
+}
+
+TEST(TaskStoreTest, Search_DateFilter_DueThisWeek_ExcludesToday) {
+    TaskStore store;
+    int64_t noon = startOfToday() + 12 * 3600;
+    store.create("today", "", 0, 0, noon);
+    auto r = store.search("", 3, -1, -1); // "this week" must not include today
+    EXPECT_EQ(r.size(), 0u);
+}
+
+TEST(TaskStoreTest, Search_DateFilter_DueThisWeek_IncludesTomorrow) {
+    TaskStore store;
+    int64_t tomorrow = startOfToday() + 86400;
+    store.create("tomorrow", "", 0, 0, tomorrow);
     auto r = store.search("", 3, -1, -1);
     EXPECT_EQ(r.size(), 1u);
 }

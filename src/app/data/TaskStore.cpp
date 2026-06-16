@@ -223,8 +223,8 @@ SmartArray<unsigned> TaskStore::search(const std::string& titleQuery,
         if (dateFilter == 1 && (t.dueDate == -1 || t.dueDate >= startOfToday))      continue; // overdue: past midnight today
         if (dateFilter == 2 && (t.dueDate == -1 || t.dueDate <  startOfToday
                                                 || t.dueDate >= startOfTomorrow))    continue; // due today: [today, tomorrow)
-        if (dateFilter == 3 && (t.dueDate == -1 || t.dueDate <  startOfToday
-                                                || t.dueDate >= startOfNextWeek))    continue; // due this week: [today, +7 days)
+        if (dateFilter == 3 && (t.dueDate == -1 || t.dueDate <  startOfTomorrow
+                                                || t.dueDate >= startOfNextWeek))    continue; // due this week: [tomorrow, +7 days)
         if (dateFilter == 4 &&  t.dueDate != -1)                                     continue; // no due date
         result.pushBack(id);
     }
