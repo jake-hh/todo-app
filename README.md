@@ -1,8 +1,29 @@
-# Build & Run
+# todo-app
 
-## Release mode
+Terminal-based task manager with dependency tracking. Tasks can block other tasks, forming a DAG. The TUI shows a tree view of the dependency graph with search, filtering, and stats.
 
-optimised compilation
+Built in C++ using [ftxui](https://github.com/ArthurSonzogni/ftxui). Data persisted to a binary file.
+
+## Features
+
+- Create/edit/delete tasks with title, description, priority, status, due date
+- Block tasks on other tasks (cycle detection prevents invalid deps)
+- Tree view of the dependency graph with 3 view modes
+- Search by title, filter by status/priority/date range
+- Aggregate stats (overdue, due today, high-priority counts)
+- Optional CLI arg to specify save file path (default: `tasks.bin` next to the binary)
+
+## Requirements
+
+- C++17 compiler (GCC/Clang/MSVC)
+- CMake 3.20+
+- Internet access on first build (fetches ftxui and GTest)
+
+## Build & Run
+
+**Release mode**
+
+optimised compilation (`-O2`, `assert()` disabled, no debug symbols)
 
 ```sh
 # initial setup (first time only)
@@ -13,13 +34,17 @@ cmake -S . -B .release -DCMAKE_BUILD_TYPE=Release
 cmake --build .release
 
 # run app
-.release/todo-app
+.release/todo-app [file]
 ```
 
 
-## Development mode
+**Development mode**
 
-add ASAN
+no optimisation, ASAN enabled (detects memory errors: use-after-free, buffer overflow, leaks)
+
+> does not use -fprofile-arcs or -ftest-coverage
+
+> ASAN flags are GCC/Clang only — Debug build will not compile on MSVC
 
 ```sh
 # initial setup (first time only)
@@ -30,7 +55,7 @@ cmake -S . -B .debug -DCMAKE_BUILD_TYPE=Debug
 cmake --build .debug
 
 # run app
-.debug/todo-app
+.debug/todo-app [file]
 
 # run tests (single file)
 .debug/tests/<test-file> --gtest_brief=1
