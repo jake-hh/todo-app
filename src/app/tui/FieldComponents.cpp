@@ -6,6 +6,13 @@
 using namespace ftxui;
 
 
+Element FieldBase::renderHoverRow() const {
+    Element row = hbox({text(_label) | bold, text(_getValue())});
+    if (Focused()) row = row | inverted | focus;
+    return row;
+}
+
+
 bool FieldBase::OnEvent(Event e) {
     if (e.is_mouse() && e.mouse().motion == Mouse::Pressed
             && _box.Contain(e.mouse().x, e.mouse().y) && CaptureMouse(e)) {
@@ -49,12 +56,10 @@ TextField::TextField(std::string label,
                      std::string errorMsg,
                      std::shared_ptr<std::function<void()>> cancelEdit,
                      std::function<std::string()> getEditValue)
-    : _label(std::move(label))
-    , _getValue(std::move(getValue))
+    : FieldBase(std::move(label), std::move(getValue))
     , _trySetValue(std::move(trySetValue))
     , _errorMsg(std::move(errorMsg))
-    // _getValue is initialised above — safe to copy as fallback for _getEditValue.
-    // If member order in the header ever changes, this line must move with _getValue.
+    // _getValue is in FieldBase (initialized before derived members) — safe to copy as fallback.
     , _getEditValue(getEditValue ? std::move(getEditValue) : _getValue)
 {
     _cancelEdit = std::move(cancelEdit);
@@ -141,9 +146,7 @@ Element TextField::OnRender() {
         return editRow | reflect(_box);
     }
 
-    Element row = hbox({text(_label) | bold, text(_getValue())});
-    if (Focused()) row = row | inverted | focus;
-    return row | reflect(_box);
+    return renderHoverRow() | reflect(_box);
 }
 
 
@@ -151,7 +154,7 @@ CycleField::CycleField(std::string label, std::function<std::string()> getValue,
                        std::function<void()> onCycle,
                        std::shared_ptr<std::function<void()>> cancelEdit,
                        std::function<std::string()> getWarning)
-    : _label(std::move(label)), _getValue(std::move(getValue))
+    : FieldBase(std::move(label), std::move(getValue))
     , _onCycle(std::move(onCycle)), _getWarning(std::move(getWarning))
 {
     _cancelEdit = std::move(cancelEdit);
@@ -173,8 +176,7 @@ bool CycleField::OnEvent(Event e) {
 
 
 Element CycleField::OnRender() {
-    Element row = hbox({text(_label) | bold, text(_getValue())});
-    if (Focused()) row = row | inverted | focus;
+    Element row = renderHoverRow();
 
     std::string warning = _getWarning ? _getWarning() : "";
     if (!warning.empty())

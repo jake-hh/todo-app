@@ -21,6 +21,13 @@ class FieldBase : public ftxui::ComponentBase {
 protected:
     ftxui::Box _box;
     std::shared_ptr<std::function<void()>> _cancelEdit;
+    std::string _label;
+    std::function<std::string()> _getValue;
+
+    ftxui::Element renderHoverRow() const;
+
+    FieldBase(std::string label, std::function<std::string()> getValue)
+        : _label(std::move(label)), _getValue(std::move(getValue)) {}
 
 public:
     bool Focusable() const override { return true; }
@@ -37,8 +44,6 @@ public:
  */
 class TextField : public FieldBase {
 private:
-    std::string _label;
-    std::function<std::string()> _getValue;
     std::function<bool(const std::string&)> _trySetValue;
     std::string _errorMsg;
     std::function<std::string()> _getEditValue;
@@ -84,8 +89,6 @@ public:
  */
 class CycleField : public FieldBase {
 private:
-    std::string _label;
-    std::function<std::string()> _getValue;
     std::function<void()> _onCycle;
     std::function<std::string()> _getWarning; ///< Returns warning text, or "" for none.
 
