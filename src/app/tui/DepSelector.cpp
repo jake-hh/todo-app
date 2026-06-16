@@ -28,7 +28,7 @@ void DepSelector::clampScroll() {
 }
 
 
-void DepSelector::toggle() {
+void DepSelector::toggleCurrentDep() {
     if (_candidates.empty()) return;
     unsigned depId = _candidates[_cursor].first;
     if (_store.wouldCycle(_taskId, depId)) return;
@@ -42,7 +42,7 @@ void DepSelector::toggle() {
 }
 
 
-void DepSelector::openFor(unsigned taskId) {
+void DepSelector::openForTask(unsigned taskId) {
     _taskId = taskId;
     _cursor = 0;
     _offset = 0;
@@ -108,7 +108,7 @@ bool DepSelector::onEvent(Event e) {
         return true;
     }
     if (e == Event::Character(' ') || e == Event::Return) {
-        toggle();
+        toggleCurrentDep();
         return true;
     }
     if (e.is_mouse()) {
@@ -135,7 +135,7 @@ bool DepSelector::onEvent(Event e) {
                 if (m.y >= box.y_min && m.y <= box.y_max) {
                     int candidateIdx = _offset + i;
                     _cursor = candidateIdx;
-                    toggle();
+                    toggleCurrentDep();
                     return true;
                 }
             }

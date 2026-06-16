@@ -113,7 +113,7 @@ void App::run() {
         [this]{ writeSwap(); rebuildTree(); },
         [&]{
             if (!_ids.empty())
-                depSelector.openFor(_ids[selIdx()]);
+                depSelector.openForTask(_ids[selIdx()]);
         });
     auto detail_component = detail_pane.getComponent();
 

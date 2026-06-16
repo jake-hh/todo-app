@@ -17,7 +17,7 @@
  * Rows that would create a cycle are dimmed and non-interactive.
  * j/k or arrows navigate; Space/Enter toggles; Esc closes.
  *
- * Usage: call openFor() to show, isOpen() to query, render()/onEvent()
+ * Usage: call openForTask() to show, isOpen() to query, render()/onEvent()
  * each frame (same pattern as Dialog). All events are consumed while open.
  */
 class DepSelector {
@@ -32,7 +32,7 @@ class DepSelector {
     ftxui::Box _dialogBox;             // screen box of the bordered dialog (for click-outside-to-close)
 
     void buildCandidates();
-    void toggle();
+    void toggleCurrentDep();
     void clampScroll();
 
 public:
@@ -41,7 +41,7 @@ public:
     DepSelector(TaskStore& store, std::function<void()> onMutation);
 
     /** @brief Opens the selector for the given task. */
-    void openFor(unsigned taskId);
+    void openForTask(unsigned taskId);
 
     bool isOpen() const { return _open; }
     void close() { _open = false; }
