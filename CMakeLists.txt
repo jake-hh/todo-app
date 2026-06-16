@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
-project(SmartArrayApp)
+project(todo-app)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endif()
 
 include(FetchContent)
 set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
@@ -15,7 +20,7 @@ FetchContent_MakeAvailable(ftxui)
 add_library(SmartArray src/smartArray/SmartArray.cpp src/smartArray/SmartArray.h)
 target_include_directories(SmartArray PUBLIC src/smartArray)
 
-add_executable(SmartArrayApp
+add_executable(todo-app
     src/app/main.cpp
     src/app/data/Task.cpp
     src/app/data/TaskStore.cpp
@@ -27,7 +32,7 @@ add_executable(SmartArrayApp
     src/app/tui/FieldComponents.cpp
     src/app/tui/DepSelector.cpp
 )
-target_link_libraries(SmartArrayApp ftxui::component SmartArray)
+target_link_libraries(todo-app ftxui::component SmartArray)
 
 add_executable(SeedData
     src/app/seedData.cpp

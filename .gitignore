@@ -1,2 +1,2 @@
-.build/
-.build-asan/
+.release/
+.debug/
