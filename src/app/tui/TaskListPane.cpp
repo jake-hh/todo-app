@@ -70,7 +70,7 @@ TaskListPane::TaskListPane(
         return false;
     });
 
-    auto container = Container::Vertical({_searchInput, _menuWithKeys});
+    auto container = Container::Vertical({_menuWithKeys, _searchInput});
 
     // Custom renderer: filter bar on top, separator, then the scrollable list
     auto withBar = Renderer(container, [this] {
