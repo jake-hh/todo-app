@@ -5,7 +5,7 @@
 #include <ftxui/screen/color.hpp>
 
 
-static const char* DATE_LABELS[]     = {"f:all", "f:ovr", "f:tod", "f:wk", "f:no-dt"};
+static const char* DATE_LABELS[]     = {"f:all", "f:overdue", "f:today", "f:week", "f:no-date"};
 static const char* PRIORITY_LABELS[] = {"p:all", "p:wish", "p:low", "p:med", "p:hi"};
 static const char* STATUS_LABELS[]   = {"s:all", "s:open", "s:prog", "s:done", "s:wonx"};
 
