@@ -108,18 +108,18 @@ void App::run() {
         _focusedEntry,
         [this]{ rebuildTree(); }
     );
-    auto list_pane = taskListPane.getComponent();
+    auto listDiv = taskListPane.getComponent();
     DetailPane detail_pane(_store, _ids, _selected,
         [this]{ writeSwap(); rebuildTree(); },
         [&]{
             if (!_ids.empty())
                 depSelector.openForTask(_ids[selIdx()]);
         });
-    auto detail_component = detail_pane.getComponent();
+    auto detailDiv = detail_pane.getComponent();
 
     // Container::Horizontal routes keyboard focus between the two panes
     // and handles focus cycling.
-    auto layout = Container::Horizontal({list_pane, detail_component});
+    auto layout = Container::Horizontal({listDiv, detailDiv});
 
     Box detail_box;
     Dialog delDialog, recoverDialog, quitDialog;
@@ -160,12 +160,12 @@ void App::run() {
             vbox({
                 text(" Tasks") | bold,
                 separator(),
-                list_pane->Render() | flex,
+                listDiv->Render() | flex,
             }) | border | size(WIDTH, EQUAL, left_w),
             vbox({
                 text(" Details") | bold,
                 separator(),
-                detail_component->Render() | flex,
+                detailDiv->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
         if (_recoverDialogOpen) {
@@ -241,12 +241,12 @@ void App::run() {
         // l/Enter from list pane → enter detail pane (title field).
         // Esc/h from detail pane → return to list pane.
         if ((e == Event::Character('l') || e == Event::Return || e == Event::ArrowRight)
-                && list_pane->Focused() && !taskListPane.isSearchFocused()) {
+                && listDiv->Focused() && !taskListPane.isSearchFocused()) {
             detail_pane.takeFocus();
             return true;
         }
         if ((e == Event::Escape || e == Event::Character('h'))
-                && detail_component->Focused() && !detail_pane.isEditing()) {
+                && detailDiv->Focused() && !detail_pane.isEditing()) {
             taskListPane.takeFocus();
             return true;
         }
