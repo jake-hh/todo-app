@@ -189,13 +189,14 @@ void App::run() {
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
         // Hint line: "[j]/[k] move  [n]ew  [Enter] edit  [d]elete  [q]uit" = 51 chars
-        static const int HINT_WIDTH = 52;
+        static const int HINT_WIDTH = 72;
         Elements rows = { panes | flex };
         if (h >= 10 && w >= HINT_WIDTH) {
             rows.push_back(hbox({
                 text(" "), text("[j]") | bold, text("/"), text("[k]") | bold, text(" move  "),
-                text("[n]") | bold, text("ew  "),
                 text("[Enter]") | bold, text(" edit  "),
+                text("[Esc]") | bold, text(" drop changes  "),
+                text("[n]") | bold, text("ew  "),
                 text("[d]") | bold, text("elete  "),
                 text("[q]") | bold, text("uit"),
             }) | dim);
