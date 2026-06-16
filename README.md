@@ -4,6 +4,8 @@ Terminal-based task manager with dependency tracking. Tasks can block other task
 
 Built in C++ using [ftxui](https://github.com/ArthurSonzogni/ftxui). Data persisted to a binary file.
 
+![screenshot](docs/scrs.png)
+
 ## Features
 
 - Create/edit/delete tasks with title, description, priority, status, due date
