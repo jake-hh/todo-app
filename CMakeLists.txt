@@ -22,7 +22,7 @@ add_executable(SmartArrayApp
     src/app/data/FileIO.cpp
     src/app/tui/App.cpp
     src/app/tui/Dialog.cpp
-    src/app/tui/TaskListPane.cpp
+    src/app/tui/ListPane.cpp
     src/app/tui/DetailPane.cpp
     src/app/tui/FieldComponents.cpp
     src/app/tui/DepSelector.cpp

@@ -1,4 +1,4 @@
-#include "TaskListPane.h"
+#include "ListPane.h"
 
 #include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -13,7 +13,7 @@ static constexpr int DATE_COUNT     = 5;
 static constexpr int FILTER_CYCLE   = 5; // -1,0,1,2,3 → next = (v+2)%5-1
 
 
-TaskListPane::TaskListPane(
+ListPane::ListPane(
     std::string& searchQuery,
     int& dateFilter,
     int& priorityFilter,

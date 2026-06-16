@@ -8,7 +8,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/terminal.hpp>
 #include "../data/FileIO.h"
-#include "TaskListPane.h"
+#include "ListPane.h"
 #include "DetailPane.h"
 #include "Dialog.h"
 #include "DepSelector.h"
@@ -98,7 +98,7 @@ void App::run() {
 
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
-    TaskListPane taskListPane(
+    ListPane listPane(
         _searchQuery,
         _dateFilter,
         _priorityFilter,
@@ -108,7 +108,7 @@ void App::run() {
         _focusedEntry,
         [this]{ rebuildTree(); }
     );
-    auto listDiv = taskListPane.getComponent();
+    auto listDiv = listPane.getComponent();
     DetailPane detail_pane(_store, _ids, _selected,
         [this]{ writeSwap(); rebuildTree(); },
         [&]{
@@ -216,10 +216,10 @@ void App::run() {
         // When the search input has focus, ftxui's Input can eat mouse clicks
         // before they reach the detail pane. Transfer focus to the menu first so
         // the click propagates correctly.
-        if (taskListPane.isSearchFocused() && e.is_mouse()
+        if (listPane.isSearchFocused() && e.is_mouse()
                 && e.mouse().motion == Mouse::Pressed
                 && detail_box.Contain(e.mouse().x, e.mouse().y)) {
-            taskListPane.takeFocus();
+            listPane.takeFocus();
             return false;
         }
 
@@ -241,17 +241,17 @@ void App::run() {
         // l/Enter from list pane → enter detail pane (title field).
         // Esc/h from detail pane → return to list pane.
         if ((e == Event::Character('l') || e == Event::Return || e == Event::ArrowRight)
-                && listDiv->Focused() && !taskListPane.isSearchFocused()) {
+                && listDiv->Focused() && !listPane.isSearchFocused()) {
             detail_pane.takeFocus();
             return true;
         }
         if ((e == Event::Escape || e == Event::Character('h'))
                 && detailDiv->Focused() && !detail_pane.isEditing()) {
-            taskListPane.takeFocus();
+            listPane.takeFocus();
             return true;
         }
 
-        if (e == Event::Character('n') && !detail_pane.isEditing() && !taskListPane.isSearchFocused()) {
+        if (e == Event::Character('n') && !detail_pane.isEditing() && !listPane.isSearchFocused()) {
             unsigned newId = _store.create("", "", 2, 0, -1LL);
             writeSwap();
             rebuildTree();
@@ -261,7 +261,7 @@ void App::run() {
             detail_pane.takeFocus();
             return true;
         }
-        if (e == Event::Character('q') && !detail_pane.isEditing() && !taskListPane.isSearchFocused()) {
+        if (e == Event::Character('q') && !detail_pane.isEditing() && !listPane.isSearchFocused()) {
             if (!std::filesystem::exists(_swapPath)) {
                 screen.ExitLoopClosure()();
             } else {
@@ -270,7 +270,7 @@ void App::run() {
             }
             return true;
         }
-        if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing() && !taskListPane.isSearchFocused()) {
+        if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing() && !listPane.isSearchFocused()) {
             const ::Task& t = selTask();
             bool hasDeps = !t.deps.isEmpty();
             unsigned tid = _ids[selIdx()];

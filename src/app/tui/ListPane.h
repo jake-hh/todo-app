@@ -17,7 +17,7 @@
  * f cycles date filter, p cycles priority filter, s cycles status filter.
  * Escape or Enter from the search input returns focus to the menu.
  */
-class TaskListPane {
+class ListPane {
 private:
     std::string& _searchQuery;
     int& _dateFilter;
@@ -33,7 +33,7 @@ private:
     ftxui::Component _searchInput;
 
 public:
-    TaskListPane(std::string& searchQuery,
+    ListPane(std::string& searchQuery,
                  int& dateFilter,
                  int& priorityFilter,
                  int& statusFilter,
