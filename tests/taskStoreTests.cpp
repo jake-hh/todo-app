@@ -93,17 +93,17 @@ TEST(TaskStoreTest, UpdateThrowsForMissingId) {
 TEST(TaskStoreTest, RemoveDeletesTask) {
     TaskStore store;
     unsigned id = makeTask(store);
-    store.removeSplice(id);
+    store.deleteSplice(id);
     EXPECT_EQ(store.size(), 0u);
     EXPECT_THROW(store.get(id), std::out_of_range);
 }
 
 TEST(TaskStoreTest, RemoveThrowsForMissingId) {
     TaskStore store;
-    EXPECT_THROW(store.removeSplice(99), std::out_of_range);
+    EXPECT_THROW(store.deleteSplice(99), std::out_of_range);
 }
 
-// ── removeCascade ─────────────────────────────────────────────────────────────
+// ── deleteWithDeps ─────────────────────────────────────────────────────────────
 
 TEST(TaskStoreTest, RemoveCascadeDeletesTargetAndTransitiveDeps) {
     // A → B → C  (A is blocked by B, B is blocked by C)
@@ -114,7 +114,7 @@ TEST(TaskStoreTest, RemoveCascadeDeletesTargetAndTransitiveDeps) {
     store.get(a).deps.pushBack(b);
     store.get(b).deps.pushBack(c);
 
-    store.removeCascade(a);
+    store.deleteWithDeps(a);
 
     EXPECT_EQ(store.size(), 0u);
 }
@@ -130,7 +130,7 @@ TEST(TaskStoreTest, RemoveCascadeCleansDanglingRefs) {
     store.get(y).deps.pushBack(b);
     store.get(b).deps.pushBack(c);
 
-    store.removeCascade(x); // deletes x, b, c
+    store.deleteWithDeps(x); // deletes x, b, c
 
     EXPECT_EQ(store.size(), 1u);
     EXPECT_EQ(store.get(y).deps.size(), 0u); // dangling ref to b removed
@@ -138,10 +138,10 @@ TEST(TaskStoreTest, RemoveCascadeCleansDanglingRefs) {
 
 TEST(TaskStoreTest, RemoveCascadeThrowsForMissingId) {
     TaskStore store;
-    EXPECT_THROW(store.removeCascade(99), std::out_of_range);
+    EXPECT_THROW(store.deleteWithDeps(99), std::out_of_range);
 }
 
-// ── removeSplice ──────────────────────────────────────────────────────────────
+// ── deleteSplice ──────────────────────────────────────────────────────────────
 
 TEST(TaskStoreTest, RemoveSpliceWiresParentToGrandchildren) {
     // A → B → C  splice B: A should now depend on C
@@ -152,7 +152,7 @@ TEST(TaskStoreTest, RemoveSpliceWiresParentToGrandchildren) {
     store.get(a).deps.pushBack(b);
     store.get(b).deps.pushBack(c);
 
-    store.removeSplice(b);
+    store.deleteSplice(b);
 
     EXPECT_EQ(store.size(), 2u);
     EXPECT_THROW(store.get(b), std::out_of_range);
@@ -170,7 +170,7 @@ TEST(TaskStoreTest, RemoveSpliceNoDuplicateDepsWhenChildAlreadyPresent) {
     store.get(a).deps.pushBack(c);
     store.get(b).deps.pushBack(c);
 
-    store.removeSplice(b);
+    store.deleteSplice(b);
 
     EXPECT_EQ(store.get(a).deps.size(), 1u);
     EXPECT_EQ(store.get(a).deps[0], c);
@@ -183,7 +183,7 @@ TEST(TaskStoreTest, RemoveSpliceLeafLeavesParentWithNoDeps) {
     unsigned b = makeTask(store, "B");
     store.get(a).deps.pushBack(b);
 
-    store.removeSplice(b);
+    store.deleteSplice(b);
 
     EXPECT_EQ(store.size(), 1u);
     EXPECT_EQ(store.get(a).deps.size(), 0u);
@@ -200,7 +200,7 @@ TEST(TaskStoreTest, RemoveSpliceMultipleParentsAllRewired) {
     store.get(y).deps.pushBack(b);
     store.get(b).deps.pushBack(c);
 
-    store.removeSplice(b);
+    store.deleteSplice(b);
 
     EXPECT_EQ(store.size(), 3u);
     EXPECT_EQ(store.get(a).deps.size(), 1u);
@@ -217,7 +217,7 @@ TEST(TaskStoreTest, NextIdAlwaysExceedsAllIds) {
     unsigned a = makeTask(store);
     unsigned b = makeTask(store);
     unsigned c = makeTask(store);
-    store.removeSplice(b);
+    store.deleteSplice(b);
     // next id should be > max remaining id
     unsigned next = makeTask(store);
     EXPECT_GT(next, a);

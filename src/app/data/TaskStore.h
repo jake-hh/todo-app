@@ -59,14 +59,14 @@ public:
      *        then removes any dangling references to deleted IDs from other tasks.
      * @throws std::out_of_range if the ID does not exist.
      */
-    void removeCascade(unsigned id);
+    void deleteWithDeps(unsigned id);
 
     /**
      * @brief Deletes @p id and splices its deps into every task that depended on it.
      *        Tasks that had @p id as a dep now depend directly on @p id's deps.
      * @throws std::out_of_range if the ID does not exist.
      */
-    void removeSplice(unsigned id);
+    void deleteSplice(unsigned id);
 
     /**
      * @brief Returns a const reference to the underlying map for iteration.

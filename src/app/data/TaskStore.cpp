@@ -54,7 +54,7 @@ void TaskStore::update(unsigned id, Task updated) {
 
 
 
-void TaskStore::removeCascade(unsigned id) {
+void TaskStore::deleteWithDeps(unsigned id) {
     if (_tasks.find(id) == _tasks.end())
         throw std::out_of_range("Task not found");
 
@@ -85,7 +85,7 @@ void TaskStore::removeCascade(unsigned id) {
 }
 
 
-void TaskStore::removeSplice(unsigned id) {
+void TaskStore::deleteSplice(unsigned id) {
     auto it = _tasks.find(id);
     if (it == _tasks.end())
         throw std::out_of_range("Task not found");

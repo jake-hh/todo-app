@@ -278,8 +278,8 @@ void App::run() {
                 delDialog.open(
                     {"Delete All", "Delete Selected", "Cancel"},
                     {
-                        [&, tid]{ _store.removeCascade(tid); writeSwap(); rebuildTree(); _delDialogOpen = false; },
-                        [&, tid]{ _store.removeSplice(tid);  writeSwap(); rebuildTree(); _delDialogOpen = false; },
+                        [&, tid]{ _store.deleteWithDeps(tid); writeSwap(); rebuildTree(); _delDialogOpen = false; },
+                        [&, tid]{ _store.deleteSplice(tid);  writeSwap(); rebuildTree(); _delDialogOpen = false; },
                         [&]     { _delDialogOpen = false; },
                     },
                     1  // default: "Delete Selected" (safer than cascade)
@@ -288,7 +288,7 @@ void App::run() {
                 delDialog.open(
                     {"Delete", "Cancel"},
                     {
-                        [&, tid]{ _store.removeSplice(tid); writeSwap(); rebuildTree(); _delDialogOpen = false; },
+                        [&, tid]{ _store.deleteSplice(tid); writeSwap(); rebuildTree(); _delDialogOpen = false; },
                         [&]     { _delDialogOpen = false; },
                     }
                 );
