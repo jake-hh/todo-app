@@ -25,6 +25,7 @@ unsigned TaskStore::create(const std::string& title,
 
 
 void TaskStore::insert(Task t) {
+    if (t.id >= _nextId) _nextId = t.id + 1;
     _tasks[t.id] = std::move(t);
 }
 
@@ -123,13 +124,6 @@ unsigned TaskStore::size() const {
     return static_cast<unsigned>(_tasks.size());
 }
 
-
-void TaskStore::recalcNextId() {
-    if (_tasks.empty())
-        _nextId = 0;
-    else
-        _nextId = _tasks.rbegin()->first + 1;
-}
 
 
 bool TaskStore::hasDep(unsigned taskId, unsigned depId) const {

@@ -102,8 +102,6 @@ void load(const std::string& path, TaskStore& store) {
 
         store.insert(std::move(t));
     }
-
-    store.recalcNextId();
 }
 
 } // namespace FileIO

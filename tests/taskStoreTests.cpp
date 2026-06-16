@@ -224,19 +224,19 @@ TEST(TaskStoreTest, NextIdAlwaysExceedsAllIds) {
     EXPECT_GT(next, c);
 }
 
-TEST(TaskStoreTest, RecalcNextIdAfterLoad) {
+TEST(TaskStoreTest, InsertMaintainsNextId) {
     TaskStore store;
-    makeTask(store); // id 0
-    makeTask(store); // id 1
-    makeTask(store); // id 2
-    store.recalcNextId();
+    for (unsigned i = 0; i < 3; i++) {
+        Task t; t.id = i; t.title = "task"; t.priority = 0;
+        t.status = 0; t.createdAt = 0; t.dueDate = -1;
+        store.insert(std::move(t));
+    }
     unsigned next = makeTask(store);
     EXPECT_EQ(next, 3u);
 }
 
-TEST(TaskStoreTest, RecalcNextIdOnEmptyStore) {
+TEST(TaskStoreTest, InsertOnEmptyStoreNextIdIsZero) {
     TaskStore store;
-    store.recalcNextId();
     unsigned next = makeTask(store);
     EXPECT_EQ(next, 0u);
 }

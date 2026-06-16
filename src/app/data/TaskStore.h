@@ -26,6 +26,7 @@ public:
      * @param status      0–3 (open/in-progress/done/wontfix).
      * @param dueDate     Unix epoch seconds, or -1 for none.
      * @return The ID assigned to the new task.
+     * Maintains _nextId automatically.
      */
     unsigned create(const std::string& title,
                     const std::string& description,
@@ -35,7 +36,7 @@ public:
 
     /**
      * @brief Inserts a task at its existing id. Used by FileIO::load.
-     * (!) You have to call recalcNextId after inserting tasks (!)
+     * Maintains _nextId automatically.
      */
     void insert(Task t);
 
@@ -77,12 +78,6 @@ public:
      * @brief Returns the number of tasks in the store.
      */
     unsigned size() const;
-
-    /**
-     * @brief Re-derives nextId as max(existing id) + 1.
-     * Call after loading tasks from disk.
-     */
-    void recalcNextId();
 
     /**
      * @brief Returns true if @p depId is already a direct dependency of @p taskId.
