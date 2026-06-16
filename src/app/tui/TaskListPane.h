@@ -1,15 +1,52 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 #include <ftxui/component/component.hpp>
 
 
 /**
- * @brief Creates a scrollable task list component with keyboard navigation.
- * @param labels Display strings for each task (shared with caller).
- *                Non-const because ftxui::Menu takes a raw non-const pointer internally.
- * @param selected Index of the currently selected task (shared state).
- * @return ftxui component handling arrow keys and j/k navigation.
+ * @brief Task list pane with embedded search input and filter bar.
+ *
+ * Renders a text search input, date/priority/status filter toggles (cycled
+ * with f/p/s), and a scrollable Menu of task labels. Filter changes call
+ * onChange so the caller can rebuild the displayed list.
+ *
+ * Key bindings (when menu has focus): j/k navigate, / focuses search,
+ * f cycles date filter, p cycles priority filter, s cycles status filter.
+ * Escape or Enter from the search input returns focus to the menu.
  */
-ftxui::Component MakeTaskListPane(std::vector<std::string>& labels, int& selected, int& focusedEntry);
+class TaskListPane {
+private:
+    std::string& _searchQuery;
+    int& _dateFilter;
+    int& _priorityFilter;
+    int& _statusFilter;
+    std::vector<std::string>& _labels;
+    int& _selected;
+    int& _focusedEntry;
+    std::function<void()> _onChange;
+    ftxui::Component _component;
+    ftxui::Component _menu;
+    ftxui::Component _menuWithKeys;
+    ftxui::Component _searchInput;
+
+public:
+    TaskListPane(std::string& searchQuery,
+                 int& dateFilter,
+                 int& priorityFilter,
+                 int& statusFilter,
+                 std::vector<std::string>& labels,
+                 int& selected,
+                 int& focusedEntry,
+                 std::function<void()> onChange);
+
+    ftxui::Component component() const { return _component; }
+
+    /** @brief Gives keyboard focus to the task menu (not the search input). */
+    void takeFocus() { _menuWithKeys->TakeFocus(); }
+
+    /** @brief Returns true while the search input has keyboard focus. */
+    bool isSearchFocused() const { return _searchInput && _searchInput->Focused(); }
+};

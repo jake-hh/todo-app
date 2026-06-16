@@ -37,16 +37,28 @@ void App::rebuildTree() {
     _ids.clear();
     _labels.clear();
 
-    // Collect IDs of all tasks that are blockers (appear in any dep list).
-    std::set<unsigned> allDeps;
-    for (auto& [id, task] : _store.tasks())
-        for (size_t i = 0; i < task.deps.size(); i++)
-            allDeps.insert(task.deps[i]);
+    bool hasFilter = !_searchQuery.empty() || _dateFilter != 0 || _priorityFilter != -1 || _statusFilter != -1;
 
-    // Start building on tree roots - tasks that no other task depend on.
-    for (auto& [id, task] : _store.tasks())
-        if (!allDeps.count(id))
-            buildTreeFrom(id, 0);
+    if (hasFilter) {
+        // Flat list of matching tasks in ID order
+        SmartArray<unsigned> matches = _store.search(_searchQuery, _dateFilter, _priorityFilter, _statusFilter);
+
+        for (size_t i = 0; i < matches.size(); i++) {
+            const Task& t = _store.get(matches[i]);
+            _ids.push_back(matches[i]);
+            _labels.push_back(t.statusSymbol() + " " + (t.title.empty() ? "New task" : t.title));
+        }
+    } else {
+        // Full dependency tree (existing logic)
+        std::set<unsigned> allDeps;
+        for (auto& [id, task] : _store.tasks())
+            for (size_t i = 0; i < task.deps.size(); i++)
+                allDeps.insert(task.deps[i]);
+
+        for (auto& [id, task] : _store.tasks())
+            if (!allDeps.count(id))
+                buildTreeFrom(id, 0);
+    }
 
     // Clamp selection to valid range.
     if (_ids.empty())
@@ -86,7 +98,17 @@ void App::run() {
 
     // Both panes share _selected by reference so navigating the list
     // automatically updates the detail view without any explicit sync.
-    auto list_pane  = MakeTaskListPane(_labels, _selected, _focusedEntry);
+    TaskListPane taskListPane(
+        _searchQuery,
+        _dateFilter,
+        _priorityFilter,
+        _statusFilter,
+        _labels,
+        _selected,
+        _focusedEntry,
+        [this]{ rebuildTree(); }
+    );
+    auto list_pane = taskListPane.component();
     DetailPane detail_pane(_store, _ids, _selected,
         [this]{ writeSwap(); rebuildTree(); },
         [&]{
@@ -208,17 +230,18 @@ void App::run() {
         // Pane focus switching.
         // l/Enter from list pane → enter detail pane (title field).
         // Esc/h from detail pane → return to list pane.
-        if ((e == Event::Character('l') || e == Event::Return || e == Event::ArrowRight) && list_pane->Focused()) {
+        if ((e == Event::Character('l') || e == Event::Return || e == Event::ArrowRight)
+                && list_pane->Focused() && !taskListPane.isSearchFocused()) {
             detail_pane.takeFocus();
             return true;
         }
         if ((e == Event::Escape || e == Event::Character('h'))
                 && detail_component->Focused() && !detail_pane.isEditing()) {
-            list_pane->TakeFocus();
+            taskListPane.takeFocus();
             return true;
         }
 
-        if (e == Event::Character('n') && !detail_pane.isEditing()) {
+        if (e == Event::Character('n') && !detail_pane.isEditing() && !taskListPane.isSearchFocused()) {
             unsigned newId = _store.create("", "", 2, 0, -1LL);
             writeSwap();
             rebuildTree();
@@ -228,7 +251,7 @@ void App::run() {
             detail_pane.takeFocus();
             return true;
         }
-        if (e == Event::Character('q') && !detail_pane.isEditing()) {
+        if (e == Event::Character('q') && !detail_pane.isEditing() && !taskListPane.isSearchFocused()) {
             if (!std::filesystem::exists(_swapPath)) {
                 screen.ExitLoopClosure()();
             } else {
@@ -237,7 +260,7 @@ void App::run() {
             }
             return true;
         }
-        if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing()) {
+        if (e == Event::Character('d') && !_ids.empty() && !detail_pane.isEditing() && !taskListPane.isSearchFocused()) {
             const ::Task& t = selTask();
             bool hasDeps = !t.deps.isEmpty();
             unsigned tid = _ids[selIdx()];
