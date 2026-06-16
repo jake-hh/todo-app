@@ -1,5 +1,6 @@
 #include "TaskStore.h"
 
+#include <algorithm>
 #include <cctype>
 #include <set>
 #include <stack>
@@ -204,16 +205,16 @@ SmartArray<unsigned> TaskStore::search(const std::string& titleQuery,
 
     // Lower-case once so per-task comparisons don't repeat the work.
     std::string queryLower = titleQuery;
-    for (char& c : queryLower)
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    std::transform(queryLower.begin(), queryLower.end(), queryLower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
 
     SmartArray<unsigned> result;
     for (auto& [id, t] : _tasks) {
         // Title substring match (case-insensitive); skip if query is empty.
         if (!queryLower.empty()) {
             std::string titleLower = t.title;
-            for (char& c : titleLower)
-                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            std::transform(titleLower.begin(), titleLower.end(), titleLower.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
             if (titleLower.find(queryLower) == std::string::npos) continue;
         }
         if (priorityFilter >= 0 && t.priority != priorityFilter) continue;
