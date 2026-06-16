@@ -213,6 +213,16 @@ void App::run() {
                 detail_pane.cancelEdit();  // Bug 2: cancel only for clicks outside detail pane
         }
 
+        // When the search input has focus, ftxui's Input can eat mouse clicks
+        // before they reach the detail pane. Transfer focus to the menu first so
+        // the click propagates correctly.
+        if (taskListPane.isSearchFocused() && e.is_mouse()
+                && e.mouse().motion == Mouse::Pressed
+                && detail_box.Contain(e.mouse().x, e.mouse().y)) {
+            taskListPane.takeFocus();
+            return false;
+        }
+
         if (_delDialogOpen && !_ids.empty()) {
             if (e == Event::Escape || e == Event::Character('q')) { _delDialogOpen = false; return true; }
             delDialog.onEvent(e);
