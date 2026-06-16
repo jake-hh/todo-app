@@ -181,6 +181,42 @@ void TaskStore::removeDep(unsigned taskId, unsigned depId) {
 }
 
 
+unsigned TaskStore::countOverdue() const {
+    time_t now = std::time(nullptr);
+    tm local = *std::localtime(&now);
+    local.tm_hour = 0; local.tm_min = 0; local.tm_sec = 0;
+    int64_t startOfToday = static_cast<int64_t>(std::mktime(&local));
+    unsigned count = 0;
+    for (auto& [id, t] : _tasks)
+        if (t.dueDate != -1 && t.dueDate < startOfToday && t.status < 2)
+            count++;
+    return count;
+}
+
+
+unsigned TaskStore::countDueToday() const {
+    time_t now = std::time(nullptr);
+    tm local = *std::localtime(&now);
+    local.tm_hour = 0; local.tm_min = 0; local.tm_sec = 0;
+    int64_t startOfToday    = static_cast<int64_t>(std::mktime(&local));
+    int64_t startOfTomorrow = startOfToday + 24LL * 3600;
+    unsigned count = 0;
+    for (auto& [id, t] : _tasks)
+        if (t.dueDate >= startOfToday && t.dueDate < startOfTomorrow && t.status < 2)
+            count++;
+    return count;
+}
+
+
+unsigned TaskStore::countHighPriority() const {
+    unsigned count = 0;
+    for (auto& [id, t] : _tasks)
+        if (t.priority == 3 && t.status < 2)
+            count++;
+    return count;
+}
+
+
 SmartArray<unsigned> TaskStore::search(const std::string& titleQuery,
                                        int dateFilter,
                                        int priorityFilter,

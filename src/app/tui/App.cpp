@@ -156,9 +156,19 @@ void App::run() {
         int w = Terminal::Size().dimx;
         int left_w  = w / 2;
         int right_w = w - left_w;
+        unsigned overdueN = _store.countOverdue();
+        unsigned todayN   = _store.countDueToday();
+        unsigned hiN      = _store.countHighPriority();
         auto main = hbox({
             vbox({
-                text(" Tasks") | bold,
+                hbox({
+                    text(" Tasks") | bold,
+                    filler(),
+                    text("overdue:" + std::to_string(overdueN)) | (overdueN > 0 ? color(Color::Red) : dim),
+                    text("  today:" + std::to_string(todayN))   | (todayN   > 0 ? color(Color::Cyan) : dim),
+                    text("  hi:" + std::to_string(hiN))         | (hiN      > 0 ? bold : dim),
+                    text(" "),
+                }),
                 separator(),
                 listDiv->Render() | flex,
             }) | border | size(WIDTH, EQUAL, left_w),

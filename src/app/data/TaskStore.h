@@ -106,6 +106,15 @@ public:
      */
     void removeDep(unsigned taskId, unsigned depId);
 
+    /** @brief Count of unresolved tasks whose due date is before today. */
+    unsigned countOverdue() const;
+
+    /** @brief Count of unresolved tasks due today. */
+    unsigned countDueToday() const;
+
+    /** @brief Count of unresolved tasks with priority == 3 (high). */
+    unsigned countHighPriority() const;
+
     /**
      * @brief Returns IDs of all tasks matching the given filters, in ID order.
      *
