@@ -18,15 +18,6 @@ void DepSelector::buildCandidates() {
 }
 
 
-void DepSelector::clampScroll() {
-    if (_cursor < _offset)
-        _offset = _cursor;
-    if (_cursor >= _offset + MAX_VISIBLE)
-        _offset = _cursor - MAX_VISIBLE + 1;
-    int maxOff = std::max(0, static_cast<int>(_candidates.size()) - MAX_VISIBLE);
-    _offset = std::max(0, std::min(_offset, maxOff));
-}
-
 
 void DepSelector::toggleCurrentDep() {
     if (_candidates.empty()) return;
@@ -45,7 +36,6 @@ void DepSelector::toggleCurrentDep() {
 void DepSelector::openForTask(unsigned taskId) {
     _taskId = taskId;
     _cursor = 0;
-    _offset = 0;
     buildCandidates();
     _open = true;
 }
@@ -61,12 +51,9 @@ Element DepSelector::render() {
         return vbox(std::move(body)) | border | clear_under | reflect(_dialogBox) | center;
     }
 
-    if (_offset > 0)
-        body.push_back(text("  \u2191 more") | dim);
-
-    int end = std::min(_offset + MAX_VISIBLE, static_cast<int>(_candidates.size()));
-    _rowBoxes.resize(end - _offset);
-    for (int i = _offset; i < end; i++) {
+    Elements rows;
+    _rowBoxes.resize(_candidates.size());
+    for (int i = 0; i < static_cast<int>(_candidates.size()); i++) {
         auto [cid, ctitle] = _candidates[i];
 
         bool isDep = _store.hasDep(_taskId, cid);
@@ -79,13 +66,12 @@ Element DepSelector::render() {
         if (forbidden)
             row = row | dim;
         else if (i == _cursor)
-            row = row | inverted;
+            row = row | inverted | focus;
 
-        body.push_back(row | reflect(_rowBoxes[i - _offset]));
+        rows.push_back(row | reflect(_rowBoxes[i]));
     }
 
-    if (_offset + MAX_VISIBLE < static_cast<int>(_candidates.size()))
-        body.push_back(text("  \u2193 more") | dim);
+    body.push_back(vbox(std::move(rows)) | vscroll_indicator | yframe | size(HEIGHT, LESS_THAN, MAX_VISIBLE));
 
     return vbox(std::move(body)) | border | clear_under | reflect(_dialogBox) | center;
 }
@@ -99,12 +85,10 @@ bool DepSelector::onEvent(Event e) {
     }
     if ((e == Event::ArrowUp || e == Event::Character('k')) && _cursor > 0) {
         _cursor--;
-        clampScroll();
         return true;
     }
     if ((e == Event::ArrowDown || e == Event::Character('j')) && _cursor < n - 1) {
         _cursor++;
-        clampScroll();
         return true;
     }
     if (e == Event::Character(' ') || e == Event::Return) {
@@ -115,12 +99,10 @@ bool DepSelector::onEvent(Event e) {
         auto& m = e.mouse();
         if (m.button == Mouse::WheelUp && _cursor > 0) {
             _cursor--;
-            clampScroll();
             return true;
         }
         if (m.button == Mouse::WheelDown && _cursor < n - 1) {
             _cursor++;
-            clampScroll();
             return true;
         }
         if (m.button == Mouse::Left && m.motion == Mouse::Pressed) {
@@ -133,8 +115,7 @@ bool DepSelector::onEvent(Event e) {
             for (int i = 0; i < static_cast<int>(_rowBoxes.size()); i++) {
                 auto& box = _rowBoxes[i];
                 if (m.y >= box.y_min && m.y <= box.y_max) {
-                    int candidateIdx = _offset + i;
-                    _cursor = candidateIdx;
+                    _cursor = i;
                     toggleCurrentDep();
                     return true;
                 }

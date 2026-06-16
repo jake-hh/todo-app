@@ -26,14 +26,12 @@ class DepSelector {
     bool _open = false;
     unsigned _taskId = 0;
     int _cursor = 0;
-    int _offset = 0;
     std::vector<std::pair<unsigned, std::string>> _candidates; // {id, title} in store order
-    std::vector<ftxui::Box> _rowBoxes; // screen boxes for visible rows, parallel to rendered rows
+    std::vector<ftxui::Box> _rowBoxes; // screen boxes for all rows, parallel to _candidates
     ftxui::Box _dialogBox;             // screen box of the bordered dialog (for click-outside-to-close)
 
     void buildCandidates();
     void toggleCurrentDep();
-    void clampScroll();
 
 public:
     static constexpr int MAX_VISIBLE = 8;
