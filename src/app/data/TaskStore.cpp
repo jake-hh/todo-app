@@ -1,5 +1,6 @@
 #include "TaskStore.h"
 
+#include <cctype>
 #include <set>
 #include <stack>
 
@@ -182,4 +183,49 @@ void TaskStore::removeDep(unsigned taskId, unsigned depId) {
         if (t.deps[i] != depId)
             kept.pushBack(t.deps[i]);
     t.deps = std::move(kept);
+}
+
+
+SmartArray<unsigned> TaskStore::search(const std::string& titleQuery,
+                                       int dateFilter,
+                                       int priorityFilter,
+                                       int statusFilter) const {
+    // Pre-compute day boundaries only when a date-range filter is active (1–3).
+    // dateFilter values: 0=all, 1=overdue, 2=due today, 3=due this week, 4=no due date.
+    int64_t startOfToday = 0, startOfTomorrow = 0, startOfNextWeek = 0;
+    if (dateFilter >= 1 && dateFilter <= 3) {
+        time_t now = std::time(nullptr);
+        tm t = *std::localtime(&now);
+        t.tm_hour = 0; t.tm_min = 0; t.tm_sec = 0;  // midnight = start of today
+        startOfToday    = static_cast<int64_t>(std::mktime(&t));
+        startOfTomorrow = startOfToday + 24LL * 3600;
+        startOfNextWeek = startOfToday + 7LL * 24 * 3600;
+    }
+
+    // Lower-case once so per-task comparisons don't repeat the work.
+    std::string queryLower = titleQuery;
+    for (char& c : queryLower)
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
+    SmartArray<unsigned> result;
+    for (auto& [id, t] : _tasks) {
+        // Title substring match (case-insensitive); skip if query is empty.
+        if (!queryLower.empty()) {
+            std::string titleLower = t.title;
+            for (char& c : titleLower)
+                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (titleLower.find(queryLower) == std::string::npos) continue;
+        }
+        if (priorityFilter >= 0 && t.priority != priorityFilter) continue;
+        if (statusFilter  >= 0 && t.status   != statusFilter)  continue;
+        // dueDate == -1 means no due date; excluded from all date-range filters.
+        if (dateFilter == 1 && (t.dueDate == -1 || t.dueDate >= startOfToday))      continue; // overdue: past midnight today
+        if (dateFilter == 2 && (t.dueDate == -1 || t.dueDate <  startOfToday
+                                                || t.dueDate >= startOfTomorrow))    continue; // due today: [today, tomorrow)
+        if (dateFilter == 3 && (t.dueDate == -1 || t.dueDate <  startOfToday
+                                                || t.dueDate >= startOfNextWeek))    continue; // due this week: [today, +7 days)
+        if (dateFilter == 4 &&  t.dueDate != -1)                                     continue; // no due date
+        result.pushBack(id);
+    }
+    return result;
 }

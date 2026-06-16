@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <ctime>
 #include "../src/app/data/TaskStore.h"
 
 // Helper: create a minimal task in the store
@@ -338,4 +339,224 @@ TEST(TaskStoreTest, RemoveDep_NonexistentDep_NoOp) {
 TEST(TaskStoreTest, RemoveDep_UnknownTask_Throws) {
     TaskStore store;
     EXPECT_THROW(store.removeDep(999, 1), std::out_of_range);
+}
+
+
+// ── search — title ────────────────────────────────────────────────────────────
+
+TEST(TaskStoreTest, Search_EmptyQuery_ReturnsAll) {
+    TaskStore store;
+    store.create("alpha", "", 0, 0, -1);
+    store.create("beta",  "", 0, 0, -1);
+    auto r = store.search("", 0, -1, -1);
+    EXPECT_EQ(r.size(), 2u);
+}
+
+TEST(TaskStoreTest, Search_TitleSubstring_MatchesOnly) {
+    TaskStore store;
+    store.create("fix login bug", "", 0, 0, -1);
+    store.create("add tests",     "", 0, 0, -1);
+    store.create("fix crash",     "", 0, 0, -1);
+    auto r = store.search("fix", 0, -1, -1);
+    EXPECT_EQ(r.size(), 2u);
+}
+
+TEST(TaskStoreTest, Search_TitleCaseInsensitive) {
+    TaskStore store;
+    store.create("Fix Login", "", 0, 0, -1);
+    store.create("add tests",  "", 0, 0, -1);
+    auto r = store.search("fix", 0, -1, -1);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_TitleNoMatch_ReturnsEmpty) {
+    TaskStore store;
+    store.create("alpha", "", 0, 0, -1);
+    auto r = store.search("zzz", 0, -1, -1);
+    EXPECT_EQ(r.size(), 0u);
+}
+
+TEST(TaskStoreTest, Search_EmptyStore_ReturnsEmpty) {
+    TaskStore store;
+    auto r = store.search("", 0, -1, -1);
+    EXPECT_EQ(r.size(), 0u);
+}
+
+
+// ── search — priority filter ──────────────────────────────────────────────────
+
+TEST(TaskStoreTest, Search_PriorityFilter_ReturnsMatchingOnly) {
+    TaskStore store;
+    store.create("low task",  "", 1, 0, -1);
+    store.create("high task", "", 3, 0, -1);
+    store.create("high task2","", 3, 0, -1);
+    auto r = store.search("", 0, 3, -1);
+    EXPECT_EQ(r.size(), 2u);
+}
+
+TEST(TaskStoreTest, Search_PriorityAllFilter_ReturnsAll) {
+    TaskStore store;
+    store.create("a", "", 0, 0, -1);
+    store.create("b", "", 2, 0, -1);
+    auto r = store.search("", 0, -1, -1);
+    EXPECT_EQ(r.size(), 2u);
+}
+
+TEST(TaskStoreTest, Search_PriorityFilter_NoMatch_ReturnsEmpty) {
+    TaskStore store;
+    store.create("a", "", 0, 0, -1); // priority 0
+    auto r = store.search("", 0, 3, -1); // looking for priority 3
+    EXPECT_EQ(r.size(), 0u);
+}
+
+
+// ── search — status filter ────────────────────────────────────────────────────
+
+TEST(TaskStoreTest, Search_StatusFilter_ReturnsMatchingOnly) {
+    TaskStore store;
+    store.create("open task",     "", 0, 0, -1); // status 0 = open
+    store.create("done task",     "", 0, 2, -1); // status 2 = done
+    store.create("wontfix task",  "", 0, 3, -1); // status 3 = wontfix
+    auto r = store.search("", 0, -1, 0);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_StatusAllFilter_ReturnsAll) {
+    TaskStore store;
+    store.create("a", "", 0, 0, -1);
+    store.create("b", "", 0, 1, -1);
+    store.create("c", "", 0, 2, -1);
+    auto r = store.search("", 0, -1, -1);
+    EXPECT_EQ(r.size(), 3u);
+}
+
+
+// ── search — date filter ──────────────────────────────────────────────────────
+
+// Compute start-of-today timestamp (mirrors the implementation)
+static int64_t startOfToday() {
+    time_t now = std::time(nullptr);
+    tm t = *std::localtime(&now);
+    t.tm_hour = 0; t.tm_min = 0; t.tm_sec = 0;
+    return static_cast<int64_t>(std::mktime(&t));
+}
+
+TEST(TaskStoreTest, Search_DateFilter_NoDate_ReturnsNoDueDateTasks) {
+    TaskStore store;
+    store.create("no date",  "", 0, 0, -1);
+    store.create("has date", "", 0, 0, startOfToday() - 86400); // yesterday
+    auto r = store.search("", 4, -1, -1); // dateFilter=4: no due date
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_DateFilter_Overdue_ReturnsOverdueTasks) {
+    TaskStore store;
+    int64_t yesterday = startOfToday() - 86400;
+    int64_t tomorrow  = startOfToday() + 86400;
+    store.create("overdue",  "", 0, 0, yesterday);
+    store.create("future",   "", 0, 0, tomorrow);
+    store.create("no date",  "", 0, 0, -1);
+    auto r = store.search("", 1, -1, -1); // dateFilter=1: overdue
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_DateFilter_DueToday_ReturnsTodayTasks) {
+    TaskStore store;
+    int64_t midday    = startOfToday() + 12 * 3600; // noon today
+    int64_t yesterday = startOfToday() - 86400;
+    int64_t nextWeek  = startOfToday() + 8 * 86400;
+    store.create("today",     "", 0, 0, midday);
+    store.create("yesterday", "", 0, 0, yesterday);
+    store.create("next week", "", 0, 0, nextWeek);
+    store.create("no date",   "", 0, 0, -1);
+    auto r = store.search("", 2, -1, -1); // dateFilter=2: due today
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_DateFilter_DueThisWeek_ReturnsTasksDueWithinWeek) {
+    TaskStore store;
+    int64_t in3Days   = startOfToday() + 3 * 86400;
+    int64_t in8Days   = startOfToday() + 8 * 86400;
+    int64_t yesterday = startOfToday() - 86400;
+    store.create("in 3 days", "", 0, 0, in3Days);
+    store.create("in 8 days", "", 0, 0, in8Days);
+    store.create("yesterday", "", 0, 0, yesterday);
+    store.create("no date",   "", 0, 0, -1);
+    // dateFilter=3: due this week means >= today and < today+7d
+    // in3Days qualifies; in8Days doesn't; yesterday is overdue not this-week
+    auto r = store.search("", 3, -1, -1);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_DateAllFilter_IncludesAllDueDates) {
+    TaskStore store;
+    store.create("no date",  "", 0, 0, -1);
+    store.create("past",     "", 0, 0, startOfToday() - 86400);
+    store.create("future",   "", 0, 0, startOfToday() + 86400);
+    auto r = store.search("", 0, -1, -1); // dateFilter=0: all
+    EXPECT_EQ(r.size(), 3u);
+}
+
+
+// ── search — multi-param ──────────────────────────────────────────────────────
+
+TEST(TaskStoreTest, Search_TitleAndPriority_Intersection) {
+    TaskStore store;
+    store.create("fix bug high",  "", 3, 0, -1);
+    store.create("fix bug low",   "", 1, 0, -1);
+    store.create("add feature",   "", 3, 0, -1);
+    // "fix" AND priority=3 → only "fix bug high"
+    auto r = store.search("fix", 0, 3, -1);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_TitleAndStatus_Intersection) {
+    TaskStore store;
+    store.create("login open",    "", 0, 0, -1); // status=0 open
+    store.create("login done",    "", 0, 2, -1); // status=2 done
+    store.create("signup open",   "", 0, 0, -1);
+    // "login" AND status=0 → only "login open"
+    auto r = store.search("login", 0, -1, 0);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_PriorityAndStatus_Intersection) {
+    TaskStore store;
+    store.create("a", "", 3, 0, -1); // high+open
+    store.create("b", "", 3, 1, -1); // high+in-progress
+    store.create("c", "", 1, 0, -1); // low+open
+    // priority=3 AND status=0 → only "a"
+    auto r = store.search("", 0, 3, 0);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_TitlePriorityStatus_AllThree) {
+    TaskStore store;
+    store.create("deploy prod",  "", 3, 1, -1); // high, in-progress
+    store.create("deploy dev",   "", 3, 0, -1); // high, open
+    store.create("deploy stage", "", 1, 1, -1); // low,  in-progress
+    store.create("review PR",    "", 3, 1, -1); // high, in-progress (no "deploy")
+    // "deploy" AND priority=3 AND status=1 → only "deploy prod"
+    auto r = store.search("deploy", 0, 3, 1);
+    EXPECT_EQ(r.size(), 1u);
+}
+
+TEST(TaskStoreTest, Search_MultiParam_NoMatch_ReturnsEmpty) {
+    TaskStore store;
+    store.create("alpha", "", 0, 0, -1);
+    // title matches but priority doesn't
+    auto r = store.search("alpha", 0, 3, -1);
+    EXPECT_EQ(r.size(), 0u);
+}
+
+TEST(TaskStoreTest, Search_ResultsInIdOrder) {
+    TaskStore store;
+    unsigned a = store.create("fix a", "", 0, 0, -1);
+    unsigned b = store.create("fix b", "", 0, 0, -1);
+    unsigned c = store.create("fix c", "", 0, 0, -1);
+    auto r = store.search("fix", 0, -1, -1);
+    ASSERT_EQ(r.size(), 3u);
+    EXPECT_EQ(r[0], a);
+    EXPECT_EQ(r[1], b);
+    EXPECT_EQ(r[2], c);
 }

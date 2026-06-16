@@ -110,4 +110,17 @@ public:
      * No-op if @p depId is not in the dependency list.
      */
     void removeDep(unsigned taskId, unsigned depId);
+
+    /**
+     * @brief Returns IDs of all tasks matching the given filters, in ID order.
+     *
+     * @param titleQuery    Case-insensitive substring to match against title. Empty = match all.
+     * @param dateFilter    0=all, 1=overdue, 2=due-today, 3=due-this-week, 4=no-date.
+     * @param priorityFilter -1=all, 0–3=exact match.
+     * @param statusFilter   -1=all, 0–3=exact match.
+     */
+    SmartArray<unsigned> search(const std::string& titleQuery,
+                                int dateFilter,
+                                int priorityFilter,
+                                int statusFilter) const;
 };
