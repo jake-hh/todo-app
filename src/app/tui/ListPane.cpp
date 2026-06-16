@@ -54,6 +54,15 @@ ListPane::ListPane(
     _menuWithKeys = CatchEvent(scrollable, [this](Event e) {
         if (e == Event::Character('j') || e == Event::ArrowDown) { _menu->OnEvent(Event::ArrowDown); return true; }
         if (e == Event::Character('k') || e == Event::ArrowUp)   { _menu->OnEvent(Event::ArrowUp);   return true; }
+        if (e == Event::Character('g') && !_labels.empty()) {
+            _selected = 0; _focusedEntry = 0; _onChange(); return true;
+        }
+        if (e == Event::Character('G') && !_labels.empty()) {
+            _selected = static_cast<int>(_labels.size()) - 1;
+            _focusedEntry = _selected;
+            _onChange();
+            return true;
+        }
         if (e == Event::Character('/')) { _searchInput->TakeFocus(); return true; }
         if (e == Event::Character('f')) {
             _dateFilter = (_dateFilter + 1) % DATE_COUNT;

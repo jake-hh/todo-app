@@ -91,6 +91,14 @@ bool DepSelector::onEvent(Event e) {
         _cursor++;
         return true;
     }
+    if (e == Event::Character('g') && n > 0) {
+        _cursor = 0;
+        return true;
+    }
+    if (e == Event::Character('G') && n > 0) {
+        _cursor = n - 1;
+        return true;
+    }
     if (e == Event::Character(' ') || e == Event::Return) {
         toggleCurrentDep();
         return true;
