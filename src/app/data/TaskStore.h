@@ -71,7 +71,7 @@ public:
     /**
      * @brief Returns a const reference to the underlying map for iteration.
      */
-    const std::map<unsigned, Task>& tasks() const;
+    const std::map<unsigned, Task>& getTasks() const;
 
     /**
      * @brief Returns the number of tasks in the store.

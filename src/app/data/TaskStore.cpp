@@ -114,7 +114,7 @@ void TaskStore::removeSplice(unsigned id) {
 }
 
 
-const std::map<unsigned, Task>& TaskStore::tasks() const {
+const std::map<unsigned, Task>& TaskStore::getTasks() const {
     return _tasks;
 }
 

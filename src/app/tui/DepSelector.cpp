@@ -12,7 +12,7 @@ DepSelector::DepSelector(TaskStore& store, std::function<void()> onMutation)
 
 void DepSelector::buildCandidates() {
     _candidates.clear();
-    for (auto& [id, task] : _store.tasks())
+    for (auto& [id, task] : _store.getTasks())
         if (id != _taskId)
             _candidates.push_back({id, task.title});
 }

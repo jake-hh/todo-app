@@ -51,11 +51,11 @@ void App::rebuildTree() {
     } else {
         // Full dependency tree (existing logic)
         std::set<unsigned> allDeps;
-        for (auto& [id, task] : _store.tasks())
+        for (auto& [id, task] : _store.getTasks())
             for (size_t i = 0; i < task.deps.size(); i++)
                 allDeps.insert(task.deps[i]);
 
-        for (auto& [id, task] : _store.tasks())
+        for (auto& [id, task] : _store.getTasks())
             if (!allDeps.count(id))
                 buildTreeFrom(id, 0);
     }
@@ -108,14 +108,14 @@ void App::run() {
         _focusedEntry,
         [this]{ rebuildTree(); }
     );
-    auto list_pane = taskListPane.component();
+    auto list_pane = taskListPane.getComponent();
     DetailPane detail_pane(_store, _ids, _selected,
         [this]{ writeSwap(); rebuildTree(); },
         [&]{
             if (!_ids.empty())
                 depSelector.openFor(_ids[selIdx()]);
         });
-    auto detail_component = detail_pane.component();
+    auto detail_component = detail_pane.getComponent();
 
     // Container::Horizontal routes keyboard focus between the two panes
     // and handles focus cycling.

@@ -37,7 +37,7 @@ public:
     /**
      * @brief Returns the ftxui component to place in the layout.
      * */
-    ftxui::Component component() const { return _component; }
+    ftxui::Component getComponent() const { return _component; }
 
     /**
      * @brief Moves focus to the title field.

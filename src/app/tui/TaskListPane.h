@@ -42,7 +42,7 @@ public:
                  int& focusedEntry,
                  std::function<void()> onChange);
 
-    ftxui::Component component() const { return _component; }
+    ftxui::Component getComponent() const { return _component; }
 
     /** @brief Gives keyboard focus to the task menu (not the search input). */
     void takeFocus() { _menuWithKeys->TakeFocus(); }

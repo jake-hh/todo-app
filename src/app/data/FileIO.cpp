@@ -59,7 +59,7 @@ void save(const std::string& path, const TaskStore& store) {
     std::ofstream f(path, std::ios::binary);
     if (!f) throw std::runtime_error("FileIO::save: cannot open " + path);
 
-    const auto& tasks = store.tasks();
+    const auto& tasks = store.getTasks();
     writeU32(f, static_cast<uint32_t>(tasks.size()));
 
     for (const auto& [id, t] : tasks) {
