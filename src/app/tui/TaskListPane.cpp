@@ -35,6 +35,9 @@ TaskListPane::TaskListPane(
 
     InputOption inputOpt;
     inputOpt.on_change = _onChange;
+    inputOpt.transform = [](InputState s) -> Element {
+        return s.focused ? s.element | bgcolor(Color::GrayDark) : s.element;
+    };
     _searchInput = Input(&_searchQuery, "search...", inputOpt);
 
     MenuOption menuOpt = MenuOption::Vertical();
