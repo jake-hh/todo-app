@@ -37,11 +37,11 @@ void App::rebuildTree() {
     _ids.clear();
     _labels.clear();
 
-    bool hasFilter = !_searchQuery.empty() || _dateFilter != 0 || _priorityFilter != -1 || _statusFilter != -1;
+    bool hasFilter = !_searchQuery.empty() || _dateFilter != 0 || _priorityFilter != -1 || _statusFilter != -1 || _unblockedFilter;
 
     if (hasFilter) {
         // Flat list of matching tasks in ID order
-        SmartArray<unsigned> matches = _store.search(_searchQuery, _dateFilter, _priorityFilter, _statusFilter);
+        SmartArray<unsigned> matches = _store.search(_searchQuery, _dateFilter, _priorityFilter, _statusFilter, _unblockedFilter);
 
         for (size_t i = 0; i < matches.size(); i++) {
             const Task& t = _store.get(matches[i]);
@@ -103,6 +103,7 @@ void App::run() {
         _dateFilter,
         _priorityFilter,
         _statusFilter,
+        _unblockedFilter,
         _labels,
         _selected,
         _focusedEntry,

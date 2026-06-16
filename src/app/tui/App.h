@@ -23,11 +23,12 @@ private:
     bool _recoverDialogOpen = false;   // whether the swap-file recovery prompt is visible
     bool _quitDialogOpen = false;      // whether the quit confirmation dialog is visible
 
-    // Search / filter state (0 / -1 = no filter active)
+    // Search / filter state (0 / -1 / false = no filter active)
     std::string _searchQuery;
-    int _dateFilter     = 0;  // 0=all, 1=overdue, 2=today, 3=this-week, 4=no-date
-    int _priorityFilter = -1; // -1=all, 0-3=specific priority
-    int _statusFilter   = -1; // -1=all, 0-3=specific status
+    int  _dateFilter      = 0;     // 0=all, 1=overdue, 2=today, 3=this-week, 4=no-date
+    int  _priorityFilter  = -1;    // -1=all, 0-3=specific priority
+    int  _statusFilter    = -1;    // -1=all, 0-3=specific status
+    bool _unblockedFilter = false; // false=all, true=unblocked only
 
     void buildTreeFromTask(unsigned id, int depth);
 

@@ -18,6 +18,7 @@ ListPane::ListPane(
     int& dateFilter,
     int& priorityFilter,
     int& statusFilter,
+    bool& unblockedFilter,
     std::vector<std::string>& labels,
     int& selected,
     int& focusedEntry,
@@ -26,6 +27,7 @@ ListPane::ListPane(
     , _dateFilter(dateFilter)
     , _priorityFilter(priorityFilter)
     , _statusFilter(statusFilter)
+    , _unblockedFilter(unblockedFilter)
     , _labels(labels)
     , _selected(selected)
     , _focusedEntry(focusedEntry)
@@ -79,6 +81,11 @@ ListPane::ListPane(
             _onChange();
             return true;
         }
+        if (e == Event::Character('b')) {
+            _unblockedFilter = !_unblockedFilter;
+            _onChange();
+            return true;
+        }
         return false;
     });
 
@@ -94,11 +101,13 @@ ListPane::ListPane(
             text("/") | color(Color::GrayDark),
             _searchInput->Render() | flex,
             text("  "),
-            text(DATE_LABELS[_dateFilter])          | (df ? bold : dim),
+            text(DATE_LABELS[_dateFilter])             | (df ? bold : dim),
             text("  "),
             text(PRIORITY_LABELS[_priorityFilter + 1]) | (pf ? bold : dim),
             text("  "),
-            text(STATUS_LABELS[_statusFilter + 1])  | (sf ? bold : dim),
+            text(STATUS_LABELS[_statusFilter + 1])     | (sf ? bold : dim),
+            text("  "),
+            text(_unblockedFilter ? "b:unblkd" : "b:all") | (_unblockedFilter ? bold : dim),
         });
 
         Element list;

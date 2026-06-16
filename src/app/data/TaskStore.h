@@ -118,13 +118,15 @@ public:
     /**
      * @brief Returns IDs of all tasks matching the given filters, in ID order.
      *
-     * @param titleQuery    Case-insensitive substring to match against title. Empty = match all.
-     * @param dateFilter    0=all, 1=overdue, 2=due-today, 3=due-this-week, 4=no-date.
+     * @param titleQuery     Case-insensitive substring to match against title. Empty = match all.
+     * @param dateFilter     0=all, 1=overdue, 2=due-today, 3=due-this-week, 4=no-date.
      * @param priorityFilter -1=all, 0–3=exact match.
      * @param statusFilter   -1=all, 0–3=exact match.
+     * @param unblockedOnly  If true, only include tasks whose deps are all resolved (status >= 2).
      */
     SmartArray<unsigned> search(const std::string& titleQuery,
                                 int dateFilter,
                                 int priorityFilter,
-                                int statusFilter) const;
+                                int statusFilter,
+                                bool unblockedOnly = false) const;
 };

@@ -220,7 +220,8 @@ unsigned TaskStore::countHighPriority() const {
 SmartArray<unsigned> TaskStore::search(const std::string& titleQuery,
                                        int dateFilter,
                                        int priorityFilter,
-                                       int statusFilter) const {
+                                       int statusFilter,
+                                       bool unblockedOnly) const {
     // Pre-compute day boundaries only when a date-range filter is active (1–3).
     // dateFilter values: 0=all, 1=overdue, 2=due today, 3=due this week, 4=no due date.
     int64_t startOfToday = 0, startOfTomorrow = 0, startOfNextWeek = 0;
@@ -256,6 +257,14 @@ SmartArray<unsigned> TaskStore::search(const std::string& titleQuery,
         if (dateFilter == 3 && (t.dueDate == -1 || t.dueDate <  startOfTomorrow
                                                 || t.dueDate >= startOfNextWeek))    continue; // due this week: [tomorrow, +7 days)
         if (dateFilter == 4 &&  t.dueDate != -1)                                     continue; // no due date
+        if (unblockedOnly) {
+            bool blocked = false;
+            for (size_t i = 0; i < t.deps.size(); i++) {
+                auto dit = _tasks.find(t.deps[i]);
+                if (dit != _tasks.end() && dit->second.status < 2) { blocked = true; break; }
+            }
+            if (blocked) continue;
+        }
         result.pushBack(id);
     }
     return result;

@@ -23,6 +23,7 @@ private:
     int& _dateFilter;
     int& _priorityFilter;
     int& _statusFilter;
+    bool& _unblockedFilter;
     std::vector<std::string>& _labels;
     int& _selected;
     int& _focusedEntry;
@@ -37,6 +38,7 @@ public:
                  int& dateFilter,
                  int& priorityFilter,
                  int& statusFilter,
+                 bool& unblockedFilter,
                  std::vector<std::string>& labels,
                  int& selected,
                  int& focusedEntry,
