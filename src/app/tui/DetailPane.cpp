@@ -38,7 +38,7 @@ DetailPane::DetailPane(TaskStore& store,
     auto id_header = Renderer([getTask, row] {
         const Task* t = getTask();
         if (!t) return text("");
-        return row(" ID: ", std::to_string(t->id));
+        return row(" ID: ", "#" + std::to_string(t->id));
     });
 
     auto created_f = Renderer([getTask, row] {
@@ -59,7 +59,7 @@ DetailPane::DetailPane(TaskStore& store,
         return s;
     };
 
-    auto deps_f = Make<CycleField>(" Deps: ", getDepsStr, onManageDeps, ef);
+    auto deps_f = Make<CycleField>(" Blocked by: ", getDepsStr, onManageDeps, ef);
 
     // Setter helpers — capture refs and onMutation by value.
     auto setTitle = [&store = _store, &ids = _ids, &sel = _selected, onMutation]
@@ -145,7 +145,7 @@ DetailPane::DetailPane(TaskStore& store,
         if (!t || t->status == 0) return "";
         for (size_t i = 0; i < t->deps.size(); i++) {
             int s = store.get(t->deps[i]).status;
-            if (s < 2 && s < t->status) return "has unresolved dependencies";
+            if (s < 2 && s < t->status) return "Has unresolved dependencies";
         }
         return "";
     };
