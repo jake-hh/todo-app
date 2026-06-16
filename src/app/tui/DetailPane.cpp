@@ -132,20 +132,36 @@ DetailPane::DetailPane(TaskStore& store,
         onMutation();
     };
 
-    // Warn when a dep is unresolved relative to the parent's progress.
-    // Rows = parent status, cols = dep status, + = no warning, - = warning.
-    //   | o | i | d | w |
-    // o | + | + | + | + |
-    // i | - | + | + | + |
-    // d | - | - | + | + |
-    // w | - | - | + | + |
-    // Rule: warn if dep.status < parent.status && dep.status < 2 (unresolved).
+    // Two status warnings, checked in priority order:
+    //
+    // 1. Dep check: warn if this task is further along than one of its deps.
+    //    Rows = this task's status, cols = dep status, + = ok, - = warn.
+    //      | o | i | d | w |
+    //    o | + | + | + | + |
+    //    i | - | + | + | + |
+    //    d | - | - | + | + |
+    //    w | - | - | + | + |
+    //    Rule: dep.status < t->status && dep.status < 2 (dep unresolved).
+    //
+    // 2. Parent check: warn if this task is blocking a task that is already resolved.
+    //    Same matrix, roles swapped: t is the dep, other is the parent.
+    //    Rule: t->status < 2 && other.status >= 2 && other.status > t->status.
     auto statusWarning = [&store = _store, getTask]() -> std::string {
         const Task* t = getTask();
-        if (!t || t->status == 0) return "";
-        for (size_t i = 0; i < t->deps.size(); i++) {
-            int s = store.get(t->deps[i]).status;
-            if (s < 2 && s < t->status) return "Has unresolved dependencies";
+        if (!t) return "";
+        if (t->status > 0) {
+            for (size_t i = 0; i < t->deps.size(); i++) {
+                int s = store.get(t->deps[i]).status;
+                if (s < 2 && s < t->status) return "Has unresolved dependencies";
+            }
+        }
+        if (t->status < 2) {
+            for (const auto& [id, other] : store.getTasks()) {
+                for (size_t i = 0; i < other.deps.size(); i++) {
+                    if (other.deps[i] == t->id && other.status > t->status && other.status >= 2)
+                        return "Blocking a resolved task";
+                }
+            }
         }
         return "";
     };
