@@ -98,10 +98,17 @@ TaskListPane::TaskListPane(
         return vbox({bar, separator(), list});
     });
 
-    // Escape or Enter from search input → return focus to menu
+    // Enter from search input → keep query, return focus to menu.
+    // Escape from search input → clear query, show all, return focus to menu.
     _component = CatchEvent(withBar, [this](Event e) {
         if (_searchInput->Focused()) {
-            if (e == Event::Escape || e == Event::Return) {
+            if (e == Event::Return) {
+                _menuWithKeys->TakeFocus();
+                return true;
+            }
+            if (e == Event::Escape) {
+                _searchQuery.clear();
+                _onChange();
                 _menuWithKeys->TakeFocus();
                 return true;
             }
