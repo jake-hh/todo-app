@@ -167,7 +167,7 @@ void App::run() {
                     filler(),
                     text("overdue:" + std::to_string(overdueN)) | (overdueN > 0 ? color(Color::Red) : dim),
                     text("  today:" + std::to_string(todayN))   | (todayN   > 0 ? color(Color::Cyan) : dim),
-                    text("  hi:" + std::to_string(hiN))         | (hiN      > 0 ? bold : dim),
+                    text("  high:" + std::to_string(hiN))         | (hiN      > 0 ? bold : dim),
                     text(" "),
                 }),
                 separator(),

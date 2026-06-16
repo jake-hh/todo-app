@@ -6,8 +6,8 @@
 
 
 static const char* DATE_LABELS[]     = {"f:all", "f:overdue", "f:today", "f:week", "f:no-date"};
-static const char* PRIORITY_LABELS[] = {"p:all", "p:wish", "p:low", "p:med", "p:hi"};
-static const char* STATUS_LABELS[]   = {"s:all", "s:open", "s:prog", "s:done", "s:wonx"};
+static const char* PRIORITY_LABELS[] = {"p:all", "p:wish", "p:low", "p:med", "p:high"};
+static const char* STATUS_LABELS[]   = {"s:all", "s:open", "s:wip", "s:done", "s:wonx"};
 
 static constexpr int DATE_COUNT     = 5;
 static constexpr int FILTER_CYCLE   = 5; // -1,0,1,2,3 → next = (v+2)%5-1
