@@ -57,7 +57,7 @@ void App::rebuildTree() {
 
         for (auto& [id, task] : _store.getTasks())
             if (!allDeps.count(id))
-                buildTreeFrom(id, 0);
+                buildTreeFromTask(id, 0);
     }
 
     // Clamp selection to valid range.
@@ -68,7 +68,7 @@ void App::rebuildTree() {
 }
 
 
-void App::buildTreeFrom(unsigned id, int depth) {
+void App::buildTreeFromTask(unsigned id, int depth) {
     const Task& t = _store.get(id);
 
     std::string prefix;
@@ -81,7 +81,7 @@ void App::buildTreeFrom(unsigned id, int depth) {
     // DFS on each tasks deps (blockers).
     // Duplicate tasks appear under each parent — no visited guard needed.
     for (size_t i = 0; i < t.deps.size(); i++)
-        buildTreeFrom(t.deps[i], depth + 1);
+        buildTreeFromTask(t.deps[i], depth + 1);
 }
 
 

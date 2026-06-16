@@ -29,7 +29,7 @@ private:
     int _priorityFilter = -1; // -1=all, 0-3=specific priority
     int _statusFilter   = -1; // -1=all, 0-3=specific status
 
-    void buildTreeFrom(unsigned id, int depth);
+    void buildTreeFromTask(unsigned id, int depth);
 
     /** @brief Clears and rebuilds _ids/_labels from the current store state; clamps _selected. */
     void rebuildTree();
