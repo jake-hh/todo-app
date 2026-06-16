@@ -163,12 +163,13 @@ void App::run() {
     // changes natural width on each selection change.
     auto renderer = Renderer(layout, [&] {
         int w = Terminal::Size().dimx;
+        int h = Terminal::Size().dimy;
         int left_w  = w / 2;
         int right_w = w - left_w;
         unsigned overdueN = _store.countOverdue();
         unsigned todayN   = _store.countDueToday();
         unsigned hiN      = _store.countHighPriority();
-        auto main = hbox({
+        auto panes = hbox({
             vbox({
                 hbox({
                     text(" Tasks") | bold,
@@ -187,6 +188,19 @@ void App::run() {
                 detailDiv->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
+        // Hint line: "[j]/[k] move  [n]ew  [Enter] edit  [d]elete  [q]uit" = 51 chars
+        static const int HINT_WIDTH = 52;
+        Elements rows = { panes | flex };
+        if (h >= 10 && w >= HINT_WIDTH) {
+            rows.push_back(hbox({
+                text(" "), text("[j]") | bold, text("/"), text("[k]") | bold, text(" move  "),
+                text("[n]") | bold, text("ew  "),
+                text("[Enter]") | bold, text(" edit  "),
+                text("[d]") | bold, text("elete  "),
+                text("[q]") | bold, text("uit"),
+            }) | dim);
+        }
+        auto main = vbox(std::move(rows));
         if (_recoverDialogOpen) {
             return dbox({main, recoverDialog.render({
                 text(" Unsaved changes found."),
