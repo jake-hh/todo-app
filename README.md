@@ -6,6 +6,7 @@ Built in C++ using [ftxui](https://github.com/ArthurSonzogni/ftxui). Data persis
 
 ![screenshot](docs/scrs.png)
 
+
 ## Features
 
 - Create/edit/delete tasks with title, description, priority, status, due date
@@ -15,11 +16,13 @@ Built in C++ using [ftxui](https://github.com/ArthurSonzogni/ftxui). Data persis
 - Aggregate stats (overdue, due today, high-priority counts)
 - Optional CLI arg to specify save file path (default: `tasks.bin` next to the binary)
 
+
 ## Requirements
 
 - C++17 compiler (GCC/Clang/MSVC)
 - CMake 3.20+
 - Internet access on first build (fetches ftxui and GTest)
+
 
 ## Build & Run
 
@@ -38,7 +41,6 @@ cmake --build .release
 # run app
 .release/todo-app [file]
 ```
-
 
 **Development mode**
 
@@ -67,3 +69,16 @@ ctest --test-dir .debug/tests | tail -4
 ```
 
 First build will fetch FTXUI and GTest from the internet.
+
+
+## Academic Context
+
+This project was overengineered for the `Programming Languages and Paradigms` CS class :)
+
+**Requirements docs**
+- [`docs/appRequirements.md`](docs/appRequirements.md)
+- [`docs/smartArrayRequirements.md`](docs/smartArrayRequirements.md)
+
+**`SmartArray<T>`** (`src/smartArray/`) — custom `std::vector` implementation required by the class
+- hand-written dynamic array
+- fully RAII-compliant (Rule of 5)
