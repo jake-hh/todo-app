@@ -11,8 +11,7 @@
 
 ## Biblioteka
 
-Już ją napisałem i jest gotowa: smartArray.h
-Wymagania biblioteki zostały zawarte w smartArrayRequirements.md
+Wymagania biblioteki zostały zawarte w `docs/smartArrayRequirements.md`
 
 ## Aplikacja
 

@@ -86,9 +86,9 @@ First build will fetch FTXUI and GTest from the internet.
 
 This project was overengineered for the `Programming Languages and Paradigms` CS class :)
 
-**Requirements docs**
-- [`docs/appRequirements.md`](docs/appRequirements.md)
-- [`docs/smartArrayRequirements.md`](docs/smartArrayRequirements.md)
+**Assignment requirements**
+- [docs/appRequirements.md (Polish)](docs/appRequirements.md)
+- [docs/smartArrayRequirements.md (Polish)](docs/smartArrayRequirements.md)
 
 **`SmartArray<T>`** (`src/smartArray/`) — custom `std::vector` implementation required by the class
 - hand-written dynamic array
