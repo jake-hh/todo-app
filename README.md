@@ -17,6 +17,17 @@ Built in C++ using [ftxui](https://github.com/ArthurSonzogni/ftxui). Data persis
 - Optional CLI arg to specify save file path (default: `tasks.bin` next to the binary)
 
 
+## Navigation
+
+Vim motions, Arrow keys, Mouse — all work simultaneously
+
+- **Move up/down** — `j`/`k`, `Tab`, Arrow keys, or Mouse click
+- **Jump to top/bottom** — `g`/`G`
+- **Select / confirm** — `Enter`, `Space` or Mouse click on field
+- **Back / cancel** — `Esc` or Mouse click outside of field
+- **Switch panes** — `h`/`l`, `Enter`/`Esc` or Mouse click on pane
+
+
 ## Requirements
 
 - C++17 compiler (GCC/Clang/MSVC)
