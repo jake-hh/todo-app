@@ -5,10 +5,14 @@
 #include "tui/App.h"
 
 
+// Default: ~/.local/share/todo-app/tasks.bin. Override with argv[1].
 static std::string resolveFilePath(int argc, char* argv[]) {
     if (argc > 1) return argv[1];
-    std::filesystem::path dir = std::filesystem::path(argv[0]).parent_path();
-    if (dir.empty()) return "tasks.bin";
+    const char* home = std::getenv("HOME");
+    std::filesystem::path dir = home
+        ? std::filesystem::path(home) / ".local" / "share" / "todo-app"
+        : std::filesystem::current_path();
+    std::filesystem::create_directories(dir);
     return (dir / "tasks.bin").string();
 }
 
