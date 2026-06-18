@@ -188,7 +188,7 @@ void App::run() {
                 detailDiv->Render() | flex,
             }) | border | size(WIDTH, EQUAL, right_w) | reflect(detail_box),
         });
-        // Hint line: "[j]/[k] move  [n]ew  [Enter] edit  [d]elete  [q]uit" = 51 chars
+        // Hint line + version tag (APP_VERSION injected by CMake via target_compile_definitions)
         static const int HINT_WIDTH = 72;
         Elements rows = { panes | flex };
         if (h >= 10 && w >= HINT_WIDTH) {
@@ -198,7 +198,9 @@ void App::run() {
                 text("[Esc]") | bold, text(" drop changes  "),
                 text("[n]") | bold, text("ew  "),
                 text("[d]") | bold, text("elete  "),
-                text("[q]") | bold, text("uit"),
+                text("[q]") | bold, text("uit  "),
+                filler(),
+                text("v " APP_VERSION " "),
             }) | dim);
         }
         auto main = vbox(std::move(rows));

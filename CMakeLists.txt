@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(todo-app)
+project(todo-app VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,6 +33,7 @@ add_executable(todo-app
     src/app/tui/DepSelector.cpp
 )
 target_link_libraries(todo-app ftxui::component SmartArray)
+target_compile_definitions(todo-app PRIVATE APP_VERSION="${PROJECT_VERSION}")
 
 add_executable(SeedData
     src/app/seedData.cpp
